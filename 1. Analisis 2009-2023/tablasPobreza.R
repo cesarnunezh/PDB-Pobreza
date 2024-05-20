@@ -12,3 +12,4 @@ baseHogares <- read_dta("base_trabajo/baseHogaresFinal.dta")
 basePersonas <- read_dta("base_trabajo/basePersonasFinal.dta")
 
 xtabs(data = baseHogares , formula = facpob07 ~ anio + pisoTierra)
+hola  
