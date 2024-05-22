@@ -9,7 +9,7 @@
 ################################################################################
 
 # 0. Librerías y direcciones ----
-dirEnaho <- "C:/Users/User/OneDrive - MIGRACIÓN VIDENZA/1. Proyectos/1. Proyectos actuales/GiZ Pobreza Urbana/1. Productos/0. Insumos/1. Bases de datos/ENAHO"
+dirEnaho <- "C:/Users/User/OneDrive - MIGRACIÓN VIDENZA/1. Proyectos/1. Proyectos actuales/23. Artículos PDB/2. PDB - Pobreza Urbana/2. Data/1. Bases/2. ENAHO Anual"
 #dirEnaho <- "/etc/data/"
 library(tidyverse)
 library(haven)
@@ -91,11 +91,10 @@ rm(mod37)
 # Área de residencia --> Nos quedamos con el ámbito urbano
 baseHogares <- baseHogares %>% 
   mutate(area = case_when(estrato < 6 ~ 1,
-                          TRUE ~ 0)) %>% 
-  filter(area == 1)
+                          TRUE ~ 0)) 
 
 setwd(dirEnaho)
-write_dta(data = baseHogares, "base_trabajo/baseHogares.dta")
+write_dta(data = baseHogares, "baseHogares.dta")
 
 ## 1.2. A nivel de persona -----------------------------------------------------
 setwd(dirEnaho)
@@ -143,16 +142,15 @@ rm(mod2, mod3, mod4, mod5, mod77, mod851, mod852)
 
 basePersonas <- basePersonas %>% 
   mutate(area = case_when(estrato < 6 ~ 1,
-                          TRUE ~ 0)) %>% 
-  filter(area == 1)
+                          TRUE ~ 0)) 
 
 setwd(dirEnaho)
-write_dta(data = basePersonas, "base_trabajo/basePersonas.dta")
+write_dta(data = basePersonas, "basePersonas.dta")
 
 # 2. Creación de variables de interés ------------------------------------------
 ## 2.1. A nivel de hogar ----
 setwd(dirEnaho)
-baseHogares <- read_dta("base_trabajo/baseHogares.dta")
+baseHogares <- read_dta("baseHogares.dta")
 
 # Departamento
 baseHogares$dpto = trunc(as.numeric(baseHogares$ubigeo)/10000)
@@ -285,7 +283,7 @@ baseHogares <-  baseHogares %>%
   mutate(pctIngExt = ingtexhd/inghog1d)
 
 # Variables de características del jefe del hogar
-basePersonas <- read_dta("base_trabajo/basePersonas.dta")
+basePersonas <- read_dta("basePersonas.dta")
 baseJefesHogar <- basePersonas %>% 
   filter(p203 == 1) %>% 
   mutate(nivEducJH = case_when(p301a <= 3 ~ 1, 
@@ -530,11 +528,11 @@ baseHogares <- baseHogares %>%
   mutate(ratioDependencia = nDepenH/mieperho)
 
 setwd(dirEnaho)
-write_dta(data = baseHogares, "base_trabajo/baseHogaresFinal.dta")
+write_dta(data = baseHogares, "baseHogaresFinal.dta")
 
 ## 2.2. A nivel de persona -----------------------------------------------------
 setwd(dirEnaho)
-basePersonas <- read_dta("base_trabajo/basePersonas.dta")
+basePersonas <- read_dta("basePersonas.dta")
 
 # Departamento
 basePersonas$dpto = trunc(as.numeric(basePersonas$ubigeo)/10000)
@@ -698,7 +696,7 @@ basePersonas <- basePersonas %>%
 
 ## Subempleo
 #Merge de hogares y personas
-baseHogares <- read_dta("base_trabajo/baseHogaresFinal.dta")
+baseHogares <- read_dta("baseHogaresFinal.dta")
 baseIMR <- baseHogares %>%
   mutate(domgeo = case_when(
            (estrato >= 1 & estrato <= 5) & (dominio >= 1 & dominio <= 3) ~ 1,
@@ -1059,7 +1057,7 @@ basePersonas <- basePersonas %>%
   mutate(confFamiliares = abandono + confPension + confTenencia + confVisitas + confDivision + confViolencia + confViolacion)
 
 setwd(dirEnaho)
-write_dta(data = basePersonas, "base_trabajo/basePersonasFinal.dta")
+write_dta(data = basePersonas, "basePersonasFinal.dta")
 
 ## 2.3 Combinación de información entre bases-----------------------------------
 
@@ -1080,7 +1078,7 @@ basePersonas <- basePersonas %>%
 rm(baseHP)
 
 setwd(dirEnaho)
-write_dta(data = basePersonas, "base_trabajo/basePersonasFinal.dta")
+write_dta(data = basePersonas, "basePersonasFinal.dta")
 
 ### Variables de base personas a hogar------------------------------------------
 basePH <- basePersonas %>%
@@ -1135,5 +1133,5 @@ baseHogares <- baseHogares %>%
 rm(basePH)
   
 setwd(dirEnaho)
-write_dta(data = baseHogares, "base_trabajo/baseHogaresFinal.dta")  
+write_dta(data = baseHogares, "baseHogaresFinal.dta")  
   
