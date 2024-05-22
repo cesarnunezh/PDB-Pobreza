@@ -10,7 +10,7 @@ library(writexl)
 
 # 1. Carga de bases de datos ----
 setwd(dirEnaho)
-#baseHogares <- read_dta("baseHogaresFinal.dta")
+baseHogares <- read_dta("baseHogaresFinal.dta")
 basePersonas <- read_dta("basePersonasFinal.dta")
 
 basePersonasFiltrada <- basePersonas %>% 
@@ -22,6 +22,18 @@ tabla1 <- basePersonasFiltrada %>%
   group_by(anio) %>%
   summarize(pobreza = weighted.mean(x = pobre, w = facpob07, na.rm = TRUE),
             pobrezaExtrema = weighted.mean(x = pobrezaExtrema, w = facpob07, na.rm = TRUE))
+
+# Variables categóricas y númericas
+##Del Jefe de hogar 
+  #ver: "nivEducJH", "lengJH","edadJH", "grupoEdadJH","estadoCivilJH", "empInfJH", "sectorJH", "tamaEmpJH", "anioEducJH", "origenJH")
+##De individuo
+Inicial_imc <- (basePersonas$nivEduc == 1)#educación
+Sec_imc <- (basePersonas$nivEduc == 2)
+Sup_imc <- (basePersonas$nivEduc == 3)
+castellano <- (basePersonas$leng == 1)#lenguaje
+lenguaNat <- (basePersonas$leng == 2)
+  #ver: "edad","grupoEdad","estadoCivil""tamaEmp", "anioEduc", "origen"
+
 
 # Características de la vivienda
 varViv <- c("vivBajaCalidad", "vivInvasion", "vivCedida",
@@ -67,18 +79,38 @@ tablasActivos <- lapply(varActivos, tablaPersonas)
 #tablasNBI <- lapply(varNBI, calcular_media_ponderada)
 
 # Características del Jefe de Hogar
-#varJH <- c("nivEducJH", "lengJH", "mujerJH", "hombreJH", "edadJH", "grupoEdadJH",
-#"estadoCivilJH", "empInfJH", "sectorJH", "sectorJHCom", "sectorJHRest", "sectorJHHog", 
-#"sinContratoJH", "indepJH", "tamaEmpJH", "anioEducJH", "jh65mas", "jh25menos", "origenJH")
+#varJH <- c("mujerJH", "empInfJH", "sectorJHCom", "sectorJHRest", "sectorJHHog", "sinContratoJH", "indepJH", "jh65mas", "jh25menos")#dummies
 
 #tablasJH <- lapply(varJH, calcular_media_ponderada)
 
 # Características del individuo
-varInd <- c("nivEduc", "leng", "mujer", "hombre", "edad", "grupoEdad",
-            "estadoCivil", "empInf", "sector", "sinContrato", "indep",
-            "tamaEmp", "anioEduc", "origen")
+varInd <- c("mujer", "empInf", "sinContrato", "indep")
 
 tablasInd <- lapply(varInd, tablaPersonas)
 
+# Relaciones Interfamiliares inestables
+#varRI <- c("confPension","confTenencia","confVisitas","confDivision","confViolencia","confViolacion")
+
+#tablasRI <- lapply(varInd, tablaPersonas)
+
+# Composición del hogar 
+#varHog <- c ("hogarUniMayor", "ratioDependencia")
+
+#tablasHog <- lapply(varInd, tablaHogares)
+
+#Seguridad Social
+varSegSocial <- c("segEssalud", "segPriv", "segEps", "segFfaa", "segSis", "segUniv", "segEsc", "segOtro", "algunSeg", "difSegSis")
+
+tablasSegSocial <- lapply(varSegSocial, tablaPersonas)
+
+#Programas sociales
+varProgSociales <- c("hogarVasoLeche","hogarComedor","hogarQaliWarma", "hogarCunaMas", "hogarJuntos", "hogarPension65", "hogarJovProd", "hogarTrabajaPeru", "hogarImpulsaPeru","hogarBeca18")
+
+tablasProgSociales <- lapply(varProgSociales, tablaHogares)
+
+
 setwd(dirOutput)
-write_xlsx(tablasViv, path = "tabla1.xlsx")
+write_xlsx(c(tablasViv,tablasServicios,tablasActivos,tablasInd,tablasSegSocial,tablasProgSociales), path = "tabla1.xlsx")
+
+
+
