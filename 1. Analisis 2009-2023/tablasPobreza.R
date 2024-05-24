@@ -32,21 +32,17 @@ basePersonasFiltrada <- basePersonas %>%
          lenguaNAt = case_when(leng == 2 ~ 1,
                                leng == NA ~ NA,
                                TRUE ~ 0),
-         internet_2023= case_when(anio == 2023 | p1144 == 1 & p1144b1 ==1 | p1144b2 ==1 )
-         subempleo = case_when(subempIng ==1 ~ 1,
-                                subempIng == NA ~ NA
-                                TRUE ~ 0))
-
-baseHogaresFiltrada <- baseHogares %>%
-    mutate(pobrezaExtrema = case_when(pobreza == 1 ~ 1,
-                                      TRUE ~ 0),
-           primaria_cJH = case_when(nivEducJH ==2~ 1,
-                                      niveEducJH == NA ~ NA,
-                                      TRUE ~ 0),
-           secundaria_cJH = case_when(niveEducJH == 3 ~ 1,
-                                        niveEduchJH == NA ~ NA,
-                                        TRUE ~ 0))
-
+         #internet= case_when(anio == 2023 & p1144 == 1 & p1144b1 ==1 | p1144b2 ==1 ~ 1,
+                             #internet ==NA ~ NA,
+                             #TRUE ~0),
+         subempleo = case_when(subempIng ==1 | subempHrs== 1 ~ 1,
+                                subempIng == NA ~ NA,
+                                TRUE ~ 0),
+         CuentaNotiene = case_when(p558e1_6 == 1 ~ 1,
+                                   p558e1_6 == NA ~ NA,
+                                   TRUE ~ 0))
+         #nbis = case_when(nbi1 == 1 | nbi2 == 1 | nbi3 == 1 | nbi4 ==1 |nbi5 ==1 ~ 1,
+                          #TRUE ~ 0))
 
 # 2. Tabulaciones de pobreza por año
 tabla1 <- basePersonasFiltrada %>% 
@@ -70,7 +66,7 @@ tablaPersonas <- function(variable) {
   }
 
 tablaHogares <- function(variable) {
-  baseHogaresFiltrada %>%
+  baseHogares %>%
     group_by(anio, pobre) %>%
     summarize_at(vars({{variable}}), ~ weighted.mean(., w = factor07, na.rm = TRUE)) %>% 
     pivot_wider(values_from = {{variable}}, names_from = pobre) %>% 
@@ -102,9 +98,20 @@ varJH <- c("mujerJH","jh65mas")
 tablasJH <- lapply(varJH, tablaHogares)
 
 # Características del individuo y empleo
-varInd <- c("mujer", "empInf", "sinContrato", "indep", "submpleo")
+varInd <- c("mujer", "empInf", "sinContrato", "indep")
 
 tablasInd <- lapply(varInd, tablaHogares)
+
+# Características de empleo
+#varEmp <- c("subempleo")
+
+#tablasEmp <- lapply(varEmp, tablaPersonas)
+
+# Características Inclusión financiera
+varCuenta<- c("CuentaNotiene")
+
+tablasCuenta<- lapply(varCuenta, tablaPersonas)
+
 
 # Relaciones Interfamiliares inestables
 varRI <- c("confFamiliares")
@@ -126,7 +133,7 @@ varProgSociales <- c("programasSociales")
 tablasProgSociales <- lapply(varProgSociales, tablaHogares)
 
 setwd(dirOutput)
-write_xlsx(c(tablasViv,tablasServicios,tablasActivos,tablasNBI,tablasJH,tablasInd,tablasRI,tablasSegSocial,tablasProgSociales), path = "tabla1.xlsx")
+write_xlsx(c(tablasViv,tablasServicios,tablasActivos,tablasNBI,tablasJH,tablasInd,tablasCuenta, tablasRI,tablasSegSocial,tablasProgSociales), path = "tabla1.xlsx")
 
 ########
 setwd(dirOutput)
@@ -143,7 +150,7 @@ nuevos_nombres <- c("vivBajaCalidad", "vivInvasion", "vivCedida",
                     "telCelu", "internet", "nActivos",
                     "nActivosPrioritarios","nbis","mujerJH","jh65mas",
                     "mujer", "empInf", "sinContrato", 
-                    "indep", "subempleo","confFamiliares",
+                    "indep","CuentaNotiene","confFamiliares",
                     "segEssalud", "segPriv", "segEps", "segFfaa", 
                     "segSis", "segUniv", "segEsc", "segOtro", 
                     "algunSeg", "difSegSis","programasSociales") 
@@ -153,3 +160,19 @@ for(i in seq_along(nuevos_nombres)) {
   names(archivo)[i] <- nuevos_nombres[i]
 }
 saveWorkbook(archivo, "tabla2.xlsx", overwrite = TRUE)
+#transferencias, en especies, servicios (cuna más - diurno de acompañamiento familiar)
+
+
+#graficos 
+graph1 <- tablasViv[4][[1]] %>% 
+  ggplot() +
+  aes(x = anio, y = pobre) +
+  stat_summary(aes(y=pobre), fun ="mean", geom="point") +
+  stat_summary(aes(y=nopobre), fun ="mean", geom="line") +
+  labs(x = "Año",
+       y = 'Pobreza urbana (%)') +
+  labs(title = "Pobreza urbana según estrato geográfico, 2007-2022", 
+       color = "Estrato")
+
+ggsave(filename = "graficos/g_Estrato.png")
+
