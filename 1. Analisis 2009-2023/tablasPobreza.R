@@ -17,27 +17,33 @@ basePersonasFiltrada <- basePersonas %>%
   filter((p204==1 & p205==2) | (p204==2 & p206==1)) %>%
   mutate(pobrezaExtrema = case_when(pobreza == 1 ~ 1,
                                     TRUE ~ 0),
-         primaria_c= case_when(nivEduc == 1  ~ 1,
-                                  nivEduc == NA ~ NA,
+         primaria_c= case_when(p301a == 4  ~ 1,
+                               p301a == NA ~ NA,
                                   TRUE ~ 0),
-         secundaria_c = case_when(nivEduc == 2 ~ 1,
-                                    nivEduc == NA ~ NA,
-                                    TRUE ~ 0),
-         superior_c = case_when(nivEduc == 3  ~ 1,
-                                  nivEduc == NA ~ NA
+         secundaria_c = case_when(p301a == 6 ~ 1,
+                                  p301a == NA ~ NA,
                                   TRUE ~ 0),
-         castellano = case_when(leng ==1 ~ 1,
-                                leng== NA ~ NA
+         superior_uni_c = case_when(p301a == 10  ~ 1,
+                                p301a == NA ~ NA,
                                 TRUE ~ 0),
-         lenguaNAt = case_when(leng ==2 ~ 1,
-                              leng == NA ~ NA
-                              TRUE ~ 0))
+         castellano = case_when(leng == 1 ~ 1,
+                                leng== NA ~ NA,
+                                TRUE ~ 0),
+         lenguaNAt = case_when(leng == 2 ~ 1,
+                               leng == NA ~ NA,
+                               TRUE ~ 0),
+         internet_2023= case_when(anio == 2023 | p1144 == 1 & p1144b1 ==1 | p1144b2 ==1 )
+         subempleo = case_when(subempIng ==1 ~ 1,
+                                subempIng == NA ~ NA
+                                TRUE ~ 0))
 
 baseHogaresFiltrada <- baseHogares %>%
-    mutate(primaria_incJH = case_when(nivEducJH ==1 ~ 1,
+    mutate(pobrezaExtrema = case_when(pobreza == 1 ~ 1,
+                                      TRUE ~ 0),
+           primaria_cJH = case_when(nivEducJH ==2~ 1,
                                       niveEducJH == NA ~ NA,
                                       TRUE ~ 0),
-           secundaria_incJH = case_when(niveEducJH == 2 ~ 1,
+           secundaria_cJH = case_when(niveEducJH == 3 ~ 1,
                                         niveEduchJH == NA ~ NA,
                                         TRUE ~ 0))
 
@@ -64,7 +70,7 @@ tablaPersonas <- function(variable) {
   }
 
 tablaHogares <- function(variable) {
-  baseHogares %>%
+  baseHogaresFiltrada %>%
     group_by(anio, pobre) %>%
     summarize_at(vars({{variable}}), ~ weighted.mean(., w = factor07, na.rm = TRUE)) %>% 
     pivot_wider(values_from = {{variable}}, names_from = pobre) %>% 
@@ -92,11 +98,11 @@ varNBI <- c("nbis")
 tablasNBI <- lapply(varNBI, tablaHogares) 
 
 # Características del Jefe de Hogar
-varJH <- c("mujerJH","jh65mas")#dummies
+varJH <- c("mujerJH","jh65mas")
 tablasJH <- lapply(varJH, tablaHogares)
 
-# Características del individuo
-varInd <- c("mujer", "empInf", "sinContrato", "indep")#dummies
+# Características del individuo y empleo
+varInd <- c("mujer", "empInf", "sinContrato", "indep", "submpleo")
 
 tablasInd <- lapply(varInd, tablaHogares)
 
@@ -126,21 +132,24 @@ write_xlsx(c(tablasViv,tablasServicios,tablasActivos,tablasNBI,tablasJH,tablasIn
 setwd(dirOutput)
 archivo <- loadWorkbook("tabla1.xlsx")
 
-nombres_hojas <- names(archivo)#nombre hojas actuales
+nombres_hojas <- names(archivo) #nombre hojas actuales
 print(nombres_hojas)
 
 #nombres hojas
 nuevos_nombres <- c("vivBajaCalidad", "vivInvasion", "vivCedida",
                     "pisoTierra", "pisoCemento", "techoDebil",
-                    "paredLadrillo", "combustibleCocina","agua", "aguaPotable", "desague", 
-                    "electricidad", "telCelu", "internet", "nActivos", "nActivosPrioritarios","nbis","mujerJH","jh65mas",
-                    "mujer", "empInf", "sinContrato", "indep", "confFamiliares","segEssalud", "segPriv", "segEps", "segFfaa", "segSis", "segUniv", "segEsc", "segOtro", "algunSeg", "difSegSis",
-                    "programasSociales") 
+                    "paredLadrillo", "combustibleCocina","agua", 
+                    "aguaPotable", "desague", "electricidad", 
+                    "telCelu", "internet", "nActivos",
+                    "nActivosPrioritarios","nbis","mujerJH","jh65mas",
+                    "mujer", "empInf", "sinContrato", 
+                    "indep", "subempleo","confFamiliares",
+                    "segEssalud", "segPriv", "segEps", "segFfaa", 
+                    "segSis", "segUniv", "segEsc", "segOtro", 
+                    "algunSeg", "difSegSis","programasSociales") 
 
-# Cambiar nombres de las hojas
+#guardar nombres en las hojas y exportar
 for(i in seq_along(nuevos_nombres)) {
   names(archivo)[i] <- nuevos_nombres[i]
 }
-
-# Guardar el archivo de Excel con los nuevos nombres de las hojas
 saveWorkbook(archivo, "tabla2.xlsx", overwrite = TRUE)
