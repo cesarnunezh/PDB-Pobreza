@@ -32,17 +32,57 @@ basePersonasFiltrada <- basePersonas %>%
          lenguaNAt = case_when(leng == 2 ~ 1,
                                leng == NA ~ NA,
                                TRUE ~ 0),
-         #internet= case_when(anio == 2023 & p1144 == 1 & p1144b1 ==1 | p1144b2 ==1 ~ 1,
-                             #internet ==NA ~ NA,
-                             #TRUE ~0),
          subempleo = case_when(subempIng ==1 | subempHrs== 1 ~ 1,
                                 subempIng == NA ~ NA,
                                 TRUE ~ 0),
+         
          CuentaNotiene = case_when(p558e1_6 == 1 ~ 1,
                                    p558e1_6 == NA ~ NA,
+                                   TRUE ~ 0),
+         educPadre_pri = case_when(p45_1 == 3 ~ 1,
+                                   p45_1 == NA ~ NA,
+                                   TRUE ~ 0),
+         educMadre_pri = case_when(p45_2 == 3 ~ 1,
+                                   p45_2 == NA ~ NA,
+                                   TRUE ~ 0),
+         educPadre_sec = case_when(p45_1 == 5 ~ 1,
+                                   p45_1 == NA ~ NA,
+                                   TRUE ~ 0),
+         educMadre_sec = case_when(p45_2 == 5 ~ 1,
+                                   p45_2 == NA ~ NA,
+                                   TRUE ~ 0),
+         educPadre_sup = case_when(p45_1 == 5 ~ 1,
+                                   p45_1 == NA ~ NA,
+                                   TRUE ~ 0),
+         educMadre_sup = case_when(p45_2 == 5 ~ 1,
+                                   p45_2 == NA ~ NA,
                                    TRUE ~ 0))
-         #nbis = case_when(nbi1 == 1 | nbi2 == 1 | nbi3 == 1 | nbi4 ==1 |nbi5 ==1 ~ 1,
-                          #TRUE ~ 0))
+
+baseHogaresFiltrada <- baseHogares %>%
+  mutate(pobrezaExtrema = case_when(pobreza == 1 ~ 1,
+                                    TRUE ~ 0),
+         nbis = case_when(nbi1 == 1 | nbi2 == 1 | nbi3 == 1 | nbi4 ==1 | nbi5 ==1 ~ 1,
+                          nbi1 == NA | nbi2 == NA | nbi3 == NA | nbi4 ==NA | nbi5 ==NA ~ 1,
+                          TRUE ~ 0),
+         hogar_Juntos = case_when(p710_04 == 1 ~ 1,
+                                  p710_04 == NA ~ NA,
+                                  TRUE ~ 0),
+         hogarCunaMas_d = case_when(p710_01 == 1 ~ 1,
+                                    p710_01 == NA ~ 1,
+                                    TRUE ~ 0),
+         hogarCunaMas_a = case_when(p710_02 == 1 ~ 1,
+                                    p710_02 == NA ~ NA,
+                                    TRUE ~ 0), 
+         hogarProgSocial = case_when(p701_01 == 1 | p701_02 == 1 |p701_03 == 1 | p701_04 == 1 | p710_05 == 1 ~ 1,
+                                     p701_01 == NA | p701_02 == NA |p701_03 == NA | p701_04 == NA | p710_05 == NA ~ NA,
+                                     TRUE ~ 0), #Vaso de leche, comedor, qaliwarma, pension 65
+         hogarProgSocial_joven = case_when(p710_07 == 1 | p710_08 == 1  |p710_09 == 1 | p710_10 == 1~ 1,
+                                           p710_07 == NA | p710_08 == NA  |p710_09 == NA | p710_10 == NA ~ NA,
+                                           TRUE ~ 0)) #JovProd TrabajaPeru ImpulsaPeru Beca18 
+
+         #internet= case_when(anio == 2023 & p1144 == 1 & p1144b1 ==1 | p1144b2 ==1 ~ 1,
+                    #internet == NA ~ NA,
+                   # TRUE ~0))
 
 # 2. Tabulaciones de pobreza por año
 tabla1 <- basePersonasFiltrada %>% 
@@ -98,14 +138,14 @@ varJH <- c("mujerJH","jh65mas")
 tablasJH <- lapply(varJH, tablaHogares)
 
 # Características del individuo y empleo
-varInd <- c("mujer", "empInf", "sinContrato", "indep")
+varInd <- c("mujer")
 
 tablasInd <- lapply(varInd, tablaHogares)
 
 # Características de empleo
-#varEmp <- c("subempleo")
+varEmp <- c("desemp", "subempleo", "sinContrato", "indep", "inactivo", "empInf")
 
-#tablasEmp <- lapply(varEmp, tablaPersonas)
+tablasEmp <- lapply(varEmp, tablaPersonas)
 
 # Características Inclusión financiera
 varCuenta<- c("CuentaNotiene")
@@ -131,6 +171,11 @@ tablasSegSocial <- lapply(varSegSocial, tablaPersonas)
 varProgSociales <- c("programasSociales")
 
 tablasProgSociales <- lapply(varProgSociales, tablaHogares)
+
+#Migración
+varMigracion <- c("migrante", "migrante5anios")
+
+tablasMigracion <- lapply(varMigracion, tablaPersonas)
 
 setwd(dirOutput)
 write_xlsx(c(tablasViv,tablasServicios,tablasActivos,tablasNBI,tablasJH,tablasInd,tablasCuenta, tablasRI,tablasSegSocial,tablasProgSociales), path = "tabla1.xlsx")
