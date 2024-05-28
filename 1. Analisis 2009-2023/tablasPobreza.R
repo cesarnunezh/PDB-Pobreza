@@ -16,24 +16,79 @@ basePersonas <- read_dta("basePersonasFinal.dta")
 basePersonasFiltrada <- basePersonas %>% 
   filter((p204==1 & p205==2) | (p204==2 & p206==1)) %>%
   mutate(pobrezaExtrema = case_when(pobreza == 1 ~ 1,
-                                    TRUE ~ 0)) 
+                                    TRUE ~ 0),
+         primaria_c= case_when(p301a == 4  ~ 1,
+                               p301a == NA ~ NA,
+                                  TRUE ~ 0),
+         secundaria_c = case_when(p301a == 6 ~ 1,
+                                  p301a == NA ~ NA,
+                                  TRUE ~ 0),
+         superior_uni_c = case_when(p301a == 10  ~ 1,
+                                p301a == NA ~ NA,
+                                TRUE ~ 0),
+         castellano = case_when(leng == 1 ~ 1,
+                                leng== NA ~ NA,
+                                TRUE ~ 0),
+         lenguaNAt = case_when(leng == 2 ~ 1,
+                               leng == NA ~ NA,
+                               TRUE ~ 0),
+         subempleo = case_when(subempIng ==1 | subempHrs== 1 ~ 1,
+                                subempIng == NA ~ NA,
+                                TRUE ~ 0),
+         
+         CuentaNotiene = case_when(p558e1_6 == 1 ~ 1,
+                                   p558e1_6 == NA ~ NA,
+                                   TRUE ~ 0),
+         educPadre_pri = case_when(p45_1 == 3 ~ 1,
+                                   p45_1 == NA ~ NA,
+                                   TRUE ~ 0),
+         educMadre_pri = case_when(p45_2 == 3 ~ 1,
+                                   p45_2 == NA ~ NA,
+                                   TRUE ~ 0),
+         educPadre_sec = case_when(p45_1 == 5 ~ 1,
+                                   p45_1 == NA ~ NA,
+                                   TRUE ~ 0),
+         educMadre_sec = case_when(p45_2 == 5 ~ 1,
+                                   p45_2 == NA ~ NA,
+                                   TRUE ~ 0),
+         educPadre_sup = case_when(p45_1 == 5 ~ 1,
+                                   p45_1 == NA ~ NA,
+                                   TRUE ~ 0),
+         educMadre_sup = case_when(p45_2 == 5 ~ 1,
+                                   p45_2 == NA ~ NA,
+                                   TRUE ~ 0))
+
+baseHogaresFiltrada <- baseHogares %>%
+  mutate(pobrezaExtrema = case_when(pobreza == 1 ~ 1,
+                                    TRUE ~ 0),
+         nbis = case_when(nbi1 == 1 | nbi2 == 1 | nbi3 == 1 | nbi4 ==1 | nbi5 ==1 ~ 1,
+                          nbi1 == NA | nbi2 == NA | nbi3 == NA | nbi4 ==NA | nbi5 ==NA ~ 1,
+                          TRUE ~ 0),
+         hogar_Juntos = case_when(p710_04 == 1 ~ 1,
+                                  p710_04 == NA ~ NA,
+                                  TRUE ~ 0),
+         hogarCunaMas_d = case_when(p710_01 == 1 ~ 1,
+                                    p710_01 == NA ~ 1,
+                                    TRUE ~ 0),
+         hogarCunaMas_a = case_when(p710_02 == 1 ~ 1,
+                                    p710_02 == NA ~ NA,
+                                    TRUE ~ 0), 
+         hogarProgSocial = case_when(p701_01 == 1 | p701_02 == 1 |p701_03 == 1 | p701_04 == 1 | p710_05 == 1 ~ 1,
+                                     p701_01 == NA | p701_02 == NA |p701_03 == NA | p701_04 == NA | p710_05 == NA ~ NA,
+                                     TRUE ~ 0), #Vaso de leche, comedor, qaliwarma, pension 65
+         hogarProgSocial_joven = case_when(p710_07 == 1 | p710_08 == 1  |p710_09 == 1 | p710_10 == 1~ 1,
+                                           p710_07 == NA | p710_08 == NA  |p710_09 == NA | p710_10 == NA ~ NA,
+                                           TRUE ~ 0)) #JovProd TrabajaPeru ImpulsaPeru Beca18 
+
+         #internet= case_when(anio == 2023 & p1144 == 1 & p1144b1 ==1 | p1144b2 ==1 ~ 1,
+                    #internet == NA ~ NA,
+                   # TRUE ~0))
+
 # 2. Tabulaciones de pobreza por año
 tabla1 <- basePersonasFiltrada %>% 
   group_by(anio) %>%
   summarize(pobreza = weighted.mean(x = pobre, w = facpob07, na.rm = TRUE),
             pobrezaExtrema = weighted.mean(x = pobrezaExtrema, w = facpob07, na.rm = TRUE))
-
-# Variables categóricas y númericas
-##Del Jefe de hogar 
-  #ver: "nivEducJH", "lengJH","edadJH", "grupoEdadJH","estadoCivilJH", "empInfJH", "sectorJH", "tamaEmpJH", "anioEducJH", "origenJH")
-##De individuo
-Inicial_imc <- (basePersonas$nivEduc == 1)#educación
-Sec_imc <- (basePersonas$nivEduc == 2)
-Sup_imc <- (basePersonas$nivEduc == 3)
-castellano <- (basePersonas$leng == 1)#lenguaje
-lenguaNat <- (basePersonas$leng == 2)
-  #ver: "edad","grupoEdad","estadoCivil""tamaEmp", "anioEduc", "origen"
-
 
 # Características de la vivienda
 varViv <- c("vivBajaCalidad", "vivInvasion", "vivCedida",
@@ -74,28 +129,37 @@ varActivos <- c("nActivos", "nActivosPrioritarios")
 tablasActivos <- lapply(varActivos, tablaPersonas)
 
 # Necesidades básicas insatisfechas 
-#varNBI <- c("nbi1", "nbi2", "nbi3", "nbi4", "nbi5")
+varNBI <- c("nbis")
 
-#tablasNBI <- lapply(varNBI, calcular_media_ponderada)
+tablasNBI <- lapply(varNBI, tablaHogares) 
 
 # Características del Jefe de Hogar
-#varJH <- c("mujerJH", "empInfJH", "sectorJHCom", "sectorJHRest", "sectorJHHog", "sinContratoJH", "indepJH", "jh65mas", "jh25menos")#dummies
+varJH <- c("mujerJH","jh65mas")
+tablasJH <- lapply(varJH, tablaHogares)
 
-#tablasJH <- lapply(varJH, calcular_media_ponderada)
+# Características del individuo y empleo
+varInd <- c("mujer")
 
-# Características del individuo
-varInd <- c("mujer", "empInf", "sinContrato", "indep")
+tablasInd <- lapply(varInd, tablaHogares)
 
-tablasInd <- lapply(varInd, tablaPersonas)
+# Características de empleo
+varEmp <- c("desemp", "subempleo", "sinContrato", "indep", "inactivo", "empInf")
+
+tablasEmp <- lapply(varEmp, tablaPersonas)
+
+# Características Inclusión financiera
+varCuenta<- c("CuentaNotiene")
+
+tablasCuenta<- lapply(varCuenta, tablaPersonas)
+
 
 # Relaciones Interfamiliares inestables
-#varRI <- c("confPension","confTenencia","confVisitas","confDivision","confViolencia","confViolacion")
+varRI <- c("confFamiliares")
 
-#tablasRI <- lapply(varInd, tablaPersonas)
+tablasRI <- lapply(varInd, tablaPersonas)
 
 # Composición del hogar 
-#varHog <- c ("hogarUniMayor", "ratioDependencia")
-
+#varHog <- c ("tipoHogar")  
 #tablasHog <- lapply(varInd, tablaHogares)
 
 #Seguridad Social
@@ -104,13 +168,56 @@ varSegSocial <- c("segEssalud", "segPriv", "segEps", "segFfaa", "segSis", "segUn
 tablasSegSocial <- lapply(varSegSocial, tablaPersonas)
 
 #Programas sociales
-varProgSociales <- c("hogarVasoLeche","hogarComedor","hogarQaliWarma", "hogarCunaMas", "hogarJuntos", "hogarPension65", "hogarJovProd", "hogarTrabajaPeru", "hogarImpulsaPeru","hogarBeca18")
+varProgSociales <- c("programasSociales")
 
 tablasProgSociales <- lapply(varProgSociales, tablaHogares)
 
+#Migración
+varMigracion <- c("migrante", "migrante5anios")
+
+tablasMigracion <- lapply(varMigracion, tablaPersonas)
 
 setwd(dirOutput)
-write_xlsx(c(tablasViv,tablasServicios,tablasActivos,tablasInd,tablasSegSocial,tablasProgSociales), path = "tabla1.xlsx")
+write_xlsx(c(tablasViv,tablasServicios,tablasActivos,tablasNBI,tablasJH,tablasInd,tablasCuenta, tablasRI,tablasSegSocial,tablasProgSociales), path = "tabla1.xlsx")
+
+########
+setwd(dirOutput)
+archivo <- loadWorkbook("tabla1.xlsx")
+
+nombres_hojas <- names(archivo) #nombre hojas actuales
+print(nombres_hojas)
+
+#nombres hojas
+nuevos_nombres <- c("vivBajaCalidad", "vivInvasion", "vivCedida",
+                    "pisoTierra", "pisoCemento", "techoDebil",
+                    "paredLadrillo", "combustibleCocina","agua", 
+                    "aguaPotable", "desague", "electricidad", 
+                    "telCelu", "internet", "nActivos",
+                    "nActivosPrioritarios","nbis","mujerJH","jh65mas",
+                    "mujer", "empInf", "sinContrato", 
+                    "indep","CuentaNotiene","confFamiliares",
+                    "segEssalud", "segPriv", "segEps", "segFfaa", 
+                    "segSis", "segUniv", "segEsc", "segOtro", 
+                    "algunSeg", "difSegSis","programasSociales") 
+
+#guardar nombres en las hojas y exportar
+for(i in seq_along(nuevos_nombres)) {
+  names(archivo)[i] <- nuevos_nombres[i]
+}
+saveWorkbook(archivo, "tabla2.xlsx", overwrite = TRUE)
+#transferencias, en especies, servicios (cuna más - diurno de acompañamiento familiar)
 
 
+#graficos 
+graph1 <- tablasViv[4][[1]] %>% 
+  ggplot() +
+  aes(x = anio, y = pobre) +
+  stat_summary(aes(y=pobre), fun ="mean", geom="point") +
+  stat_summary(aes(y=nopobre), fun ="mean", geom="line") +
+  labs(x = "Año",
+       y = 'Pobreza urbana (%)') +
+  labs(title = "Pobreza urbana según estrato geográfico, 2007-2022", 
+       color = "Estrato")
+
+ggsave(filename = "graficos/g_Estrato.png")
 
