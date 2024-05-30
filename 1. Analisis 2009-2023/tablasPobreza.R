@@ -1,3 +1,9 @@
+#*******************************************************************************
+# Proyecto: PDB - Pobreza
+# Objetivo: Analizar las características de la población pobre y no pobre 
+# Autores: CN, JP
+#*******************************************************************************
+
 # 0. Funciones -----------------------------------------------------------------
 xtile <- function(x, n = NULL, probs = NULL, cutpoints = NULL, w = NULL){
   if (!is.null(n)){
@@ -37,7 +43,7 @@ pctile <- function(x, probs = c(0.25, 0.5, 0.75), w = NULL, na.rm = FALSE){
   }
 }
 
-# 1. Librerías y direcciones ----
+# 1. Librerías y direcciones ---------------------------------------------------
 dirEnaho <- "C:/Users/User/OneDrive - MIGRACIÓN VIDENZA/1. Proyectos/1. Proyectos actuales/23. Artículos PDB/2. PDB - Pobreza Urbana/2. Data/1. Bases/2. ENAHO Anual"
 dirOutput <- "C:/Users/User/OneDrive - MIGRACIÓN VIDENZA/1. Proyectos/1. Proyectos actuales/23. Artículos PDB/2. PDB - Pobreza Urbana/2. Data/2. Output"
 #dirEnaho <- "/etc/data/"
@@ -47,7 +53,7 @@ library(dplyr)
 library(writexl)
 library(openxlsx)
 
-# 2. Carga de bases de datos ----
+# 2. Carga de bases de datos ---------------------------------------------------
 setwd(dirEnaho)
 baseHogares <- read_dta("baseHogaresFinal.dta")
 basePersonas <- read_dta("basePersonasFinal.dta")
@@ -130,11 +136,15 @@ baseHogaresFiltrada <- baseHogaresFiltrada %>%
   mutate(gashog2dPCap = gashog2d / mieperho,
          gastoPCentil = xtile(gashog2dPCap, 100))
 
-# 2. Tabulaciones de pobreza por año
+# 3. Tabulaciones de pobreza por año -------------------------------------------
 tabla1 <- basePersonasFiltrada %>% 
   group_by(anio) %>%
   summarize(pobreza = weighted.mean(x = pobre, w = facpob07, na.rm = TRUE),
             pobrezaExtrema = weighted.mean(x = pobrezaExtrema, w = facpob07, na.rm = TRUE))
+
+# 4. Caracterización de población pobre y no pobre por año ---------------------
+
+## 4.1. A nivel de personas ----------------------------------------------------
 
 tablaPersonas <- function(variable) {
   basePersonasFiltrada %>%
@@ -144,19 +154,8 @@ tablaPersonas <- function(variable) {
     rename(anio = 1,
            nopobre = 2,
            pobre = 3)
-  }
-
-tablaHogares <- function(variable) {
-  baseHogaresFiltrada %>%
-    group_by(anio, pobre) %>%
-    summarize_at(vars({{variable}}), ~ weighted.mean(., w = factor07, na.rm = TRUE)) %>% 
-    pivot_wider(values_from = {{variable}}, names_from = pobre) %>% 
-    rename(anio = 1,
-           nopobre = 2,
-           pobre = 3)
 }
 
-# Variables de personas
 varCatP <- c("abandono", "agua", "aguaPotable", "auto", "casado", "cocina_kerosene", 
              "combustibleCocina", "computadora", "confDivision", "confianzaMD", "confianzaMP", 
              "confPension", "confTenencia", "confViolacion", "confViolencia", "confVisitas", 
@@ -185,80 +184,11 @@ varCatP <- c("abandono", "agua", "aguaPotable", "auto", "casado", "cocina_kerose
              "equipo_sonido", "microondas", "plancha", "refrigerador", "telCelu", "tv_color")
 
 # Variables de hogar y vivienda
-tablas2 <- lapply(varCatP, tablaPersonas)
-
-
-# Características de la vivienda
-varViv <- c("vivBajaCalidad", "vivInvasion", "vivCedida",
-            "pisoTierra", "pisoCemento", "techoDebil",
-            "paredLadrillo", "combustibleCocina")
-tablasViv <- lapply(varViv, tablaPersonas)
-
-# Servicios básicos en la vivienda
-varServicios <- c("agua", "aguaPotable", "desague", 
-                  "electricidad", "telCelu", "internet")
-
-tablasServicios <- lapply(varServicios, tablaHogares)
-
-# Número de activos
-varActivos <- c("nActivos", "nActivosPrioritarios")
-
-tablasActivos <- lapply(varActivos, tablaPersonas)
-
-# Necesidades básicas insatisfechas 
-varNBI <- c("nbis")
-
-tablasNBI <- lapply(varNBI, tablaHogares) 
-
-# Características del Jefe de Hogar
-varJH <- c("mujerJH","jh65mas")
-tablasJH <- lapply(varJH, tablaHogares)
-
-# Características del individuo y empleo
-varInd <- c("mujer")
-
-tablasInd <- lapply(varInd, tablaHogares)
-
-# Características de empleo
-varEmp <- c("desemp", "subempleo", "sinContrato", "indep", "inactivo", "empInf")
-
-tablasEmp <- lapply(varEmp, tablaPersonas)
-
-# Características Inclusión financiera
-varCuenta<- c("cuentaNoTiene", "nCuentas")
-
-tablasCuenta<- lapply(varCuenta, tablaPersonas)
-
-
-# Relaciones Interfamiliares inestables
-varRI <- c("confFamiliares")
-
-tablasRI <- lapply(varRI, tablaPersonas)
-
-# Composición del hogar 
-#varHog <- c ("tipoHogar")  
-#tablasHog <- lapply(varInd, tablaHogares)
-
-#Seguridad Social
-varSegSocial <- c("segEssalud", "segPriv", "segEps", "segFfaa", "segSis", "segUniv", "segEsc", "segOtro", "algunSeg", "difSegSis")
-
-tablasSegSocial <- lapply(varSegSocial, tablaPersonas)
-
-#Programas sociales
-varProgSociales <- c("programasSociales")
-
-tablasProgSociales <- lapply(varProgSociales, tablaHogares)
-
-#Migración
-varMigracion <- c("migrante", "migrante5anios")
-
-tablasMigracion <- lapply(varMigracion, tablaPersonas)
+tablas <- lapply(varCatP, tablaPersonas)
 
 setwd(dirOutput)
-tablas <- c(tablasViv,tablasServicios,tablasActivos,tablasNBI,tablasEmp, tablasJH,tablasInd,tablasCuenta, tablasRI,tablasSegSocial,tablasProgSociales, tablasMigracion)
 write_xlsx(tablas, path = "tabla1.xlsx")
 
-########
 setwd(dirOutput)
 archivo <- loadWorkbook("tabla1.xlsx")
 
@@ -266,20 +196,19 @@ nombres_hojas <- names(archivo) #nombre hojas actuales
 print(nombres_hojas)
 
 #nombres hojas
-nuevos_nombres <- c(varViv,varServicios,varActivos,varNBI, varEmp, varJH,varInd,varCuenta, varRI,varSegSocial,varProgSociales, varMigracion)
+nuevos_nombres <- varCatP
 
 #guardar nombres en las hojas y exportar
 for(i in seq_along(nuevos_nombres)) {
   names(archivo)[i] <- nuevos_nombres[i]
 }
-saveWorkbook(archivo, "tabla2.xlsx", overwrite = TRUE)
-#transferencias, en especies, servicios (cuna más - diurno de acompañamiento familiar)
+saveWorkbook(archivo, "tabla1.xlsx", overwrite = TRUE)
 
-
-# Gráficos ----
-## Series anuales
-for(i in seq_along(tablas2)){
-  graph <- tablas2[[i]] %>% 
+# Gráficos 
+# Series anuales
+for(i in seq_along(tablas)){
+  graph <- tablas[[i]] %>% 
+    filter(pobre != 0 & nopobre !=0) %>% 
     pivot_longer(cols = c(nopobre, pobre), names_to = "estado", values_to = "valor") %>% 
     select(c(anio, estado, valor)) %>% 
     ggplot() +
@@ -292,7 +221,45 @@ for(i in seq_along(tablas2)){
          color = "Condición de pobreza")
   
   setwd(dirOutput)
-  ggsave(paste("graficosUrb/fig_",varCatP[i],".png",sep = ""))
+  ggsave(paste("graficosUrb/Pob/fig_",varCatP[i],".png",sep = ""))
+}
+
+for(j in 1:length(varCatP)){
+  # Filter data for poor households and create a 'periodo' variable
+  filtered_data <-basePersonasFiltrada %>% 
+    mutate(periodo = case_when(anio >= 2021 ~ "Entre 2021 y 2023",
+                               anio < 2020 & anio >= 2017 ~ "Entre 2017 y 2019",
+                               TRUE ~ "OMITIR" ),
+           pobre = case_when(pobre == 1 ~ "Pobre",
+                             pobre != 1 ~ "No pobre")) %>% 
+    filter(periodo != "OMITIR") %>%
+    group_by(periodo, pobre) %>%
+    summarize(weighted_mean = weighted.mean(get(varCatP[j]), w = facpob07, na.rm = TRUE), .groups = 'drop') 
+  
+  # Create histogram with ggplot2
+  p <- filtered_data %>% 
+    ggplot() +
+    aes( y = weighted_mean, x = pobre, fill = pobre) +
+    geom_bar(stat = "identity", position = "dodge") +
+    facet_wrap(~ periodo) +
+    ggtitle(paste("Porcentaje de ", varCat[j], " según periodo y condición de pobreza - Urbano")) +
+    theme(legend.position = "none") 
+  
+  # Save the plot as a PNG file
+  ggsave(filename = paste0("graficosUrb/Pob/bar_", varCat[j], ".png"), plot = p)
+}
+
+
+## 4.2. A nivel de hogar -------------------------------------------------------
+
+tablaHogares <- function(variable) {
+  baseHogaresFiltrada %>%
+    group_by(anio, pobre) %>%
+    summarize_at(vars({{variable}}), ~ weighted.mean(., w = factor07, na.rm = TRUE)) %>% 
+    pivot_wider(values_from = {{variable}}, names_from = pobre) %>% 
+    rename(anio = 1,
+           nopobre = 2,
+           pobre = 3)
 }
 
 varCat <- c("vivBajaCalidad", "vivInvasion", "vivCedida", "pisoTierra", "pisoCemento", "pisoTierraCemento", "techoDebil", "paredLadrillo",
@@ -325,5 +292,5 @@ for(j in 1:length(varCat)){
     theme(legend.position = "none") 
   
   # Save the plot as a PNG file
-  ggsave(filename = paste0("graficosUrb/bar_", varCat[j], ".png"), plot = p)
+  ggsave(filename = paste0("graficosUrb/Hog/bar_", varCat[j], ".png"), plot = p)
 }
