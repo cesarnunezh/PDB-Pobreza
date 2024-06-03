@@ -1,4 +1,49 @@
-# 0. Librerías y direcciones ----
+#*******************************************************************************
+# Proyecto: PDB - Pobreza
+# Objetivo: Analizar las características de la población pobre y no pobre 
+# Autores: CN, JP
+#*******************************************************************************
+
+# 0. Funciones -----------------------------------------------------------------
+xtile <- function(x, n = NULL, probs = NULL, cutpoints = NULL, w = NULL){
+  if (!is.null(n)){
+    probs <-  seq(1/n, 1-1/n, length = n -1)
+  }
+  if (!is.null(probs)){
+    cutpoints <-  pctile(x, probs, w = w, na.rm = TRUE)
+  }
+  # In stata xtile is (-infty, x_p1], (xp1, xpe], like .bincode 
+  .bincode(x, c(-Inf, cutpoints , +Inf) , include.lowest = TRUE)
+}
+
+pctile <- function(x, probs = c(0.25, 0.5, 0.75), w = NULL, na.rm = FALSE){
+  if (is.null(w)){
+    quantile(x = x, type = 2, probs = probs, na.rm = na.rm)
+  } else{
+    if (anyNA(x) | anyNA(w)) {
+      if (na.rm) {
+        na <- is.na(x) | is.na(w)
+        x <- x[!na]
+        w <- w[!na]
+      }
+      else{
+        stop("Missing values not allowed when na.rm is FALSE", call. = FALSE)
+      } 
+    }
+    # Ensure x and w in ascending order of x
+    order <- order(x)
+    cumsum <- cumsum(w[order])
+    n <- cumsum[length(cumsum)]
+    # follow definition of quantile 2 
+    index <- n * probs
+    j <- floor(index)
+    low <- x[order[pmin(length(x),   .bincode(j, c(-Inf, cumsum)))]]
+    high <- x[order[pmin(length(x),   .bincode(j + 1, c(-Inf, cumsum)))]]
+    ifelse(j == index, 0.5 * low + 0.5 * high, high)
+  }
+}
+
+# 1. Librerías y direcciones ---------------------------------------------------
 dirEnaho <- "C:/Users/User/OneDrive - MIGRACIÓN VIDENZA/1. Proyectos/1. Proyectos actuales/23. Artículos PDB/2. PDB - Pobreza Urbana/2. Data/1. Bases/2. ENAHO Anual"
 dirOutput <- "C:/Users/User/OneDrive - MIGRACIÓN VIDENZA/1. Proyectos/1. Proyectos actuales/23. Artículos PDB/2. PDB - Pobreza Urbana/2. Data/2. Output"
 #dirEnaho <- "/etc/data/"
@@ -6,24 +51,25 @@ library(tidyverse)
 library(haven)
 library(dplyr)
 library(writexl)
+library(openxlsx)
 
-
-# 1. Carga de bases de datos ----
+# 2. Carga de bases de datos ---------------------------------------------------
 setwd(dirEnaho)
 baseHogares <- read_dta("baseHogaresFinal.dta")
 basePersonas <- read_dta("basePersonasFinal.dta")
 
 basePersonasFiltrada <- basePersonas %>% 
   filter((p204==1 & p205==2) | (p204==2 & p206==1)) %>%
+  filter(area == 1) %>% 
   mutate(pobrezaExtrema = case_when(pobreza == 1 ~ 1,
                                     TRUE ~ 0),
-         primaria_c= case_when(p301a == 4  ~ 1,
+         primaria_c= case_when(p301a >= 4  ~ 1,
                                p301a == NA ~ NA,
                                   TRUE ~ 0),
-         secundaria_c = case_when(p301a == 6 ~ 1,
+         secundaria_c = case_when(p301a >= 6 & p301a != 12 ~ 1,
                                   p301a == NA ~ NA,
                                   TRUE ~ 0),
-         superior_uni_c = case_when(p301a == 10  ~ 1,
+         superior_c = case_when(p301a == 10 | p301a == 8 | p301a == 11 ~ 1,
                                 p301a == NA ~ NA,
                                 TRUE ~ 0),
          castellano = case_when(leng == 1 ~ 1,
@@ -35,34 +81,36 @@ basePersonasFiltrada <- basePersonas %>%
          subempleo = case_when(subempIng ==1 | subempHrs== 1 ~ 1,
                                 subempIng == NA ~ NA,
                                 TRUE ~ 0),
-         
          CuentaNotiene = case_when(p558e1_6 == 1 ~ 1,
                                    p558e1_6 == NA ~ NA,
                                    TRUE ~ 0),
-         educPadre_pri = case_when(p45_1 == 3 ~ 1,
+         educPadre_pri = case_when(p45_1 >= 3 ~ 1,
                                    p45_1 == NA ~ NA,
                                    TRUE ~ 0),
-         educMadre_pri = case_when(p45_2 == 3 ~ 1,
+         educMadre_pri = case_when(p45_2 >= 3 ~ 1,
                                    p45_2 == NA ~ NA,
                                    TRUE ~ 0),
-         educPadre_sec = case_when(p45_1 == 5 ~ 1,
+         educPadre_sec = case_when(p45_1 >= 5 ~ 1,
                                    p45_1 == NA ~ NA,
                                    TRUE ~ 0),
-         educMadre_sec = case_when(p45_2 == 5 ~ 1,
+         educMadre_sec = case_when(p45_2 >= 5 ~ 1,
                                    p45_2 == NA ~ NA,
                                    TRUE ~ 0),
-         educPadre_sup = case_when(p45_1 == 5 ~ 1,
+         educPadre_sup = case_when(p45_1 >= 9 | p45_1 == 7 ~ 1,
                                    p45_1 == NA ~ NA,
                                    TRUE ~ 0),
-         educMadre_sup = case_when(p45_2 == 5 ~ 1,
+         educMadre_sup = case_when(p45_2 >= 9 | p45_2 == 7 ~ 1,
                                    p45_2 == NA ~ NA,
-                                   TRUE ~ 0))
+                                   TRUE ~ 0),
+         algunSeg = case_when(rowSums(select(., starts_with("seg"))) > 0 ~ 1,
+                              TRUE ~ 0))
 
 baseHogaresFiltrada <- baseHogares %>%
+  filter(area == 1) %>% 
   mutate(pobrezaExtrema = case_when(pobreza == 1 ~ 1,
                                     TRUE ~ 0),
          nbis = case_when(nbi1 == 1 | nbi2 == 1 | nbi3 == 1 | nbi4 ==1 | nbi5 ==1 ~ 1,
-                          nbi1 == NA | nbi2 == NA | nbi3 == NA | nbi4 ==NA | nbi5 ==NA ~ 1,
+                          nbi1 == NA & nbi2 == NA & nbi3 == NA & nbi4 ==NA & nbi5 ==NA ~ 1,
                           TRUE ~ 0),
          hogar_Juntos = case_when(p710_04 == 1 ~ 1,
                                   p710_04 == NA ~ NA,
@@ -74,26 +122,29 @@ baseHogaresFiltrada <- baseHogares %>%
                                     p710_02 == NA ~ NA,
                                     TRUE ~ 0), 
          hogarProgSocial = case_when(p701_01 == 1 | p701_02 == 1 |p701_03 == 1 | p701_04 == 1 | p710_05 == 1 ~ 1,
-                                     p701_01 == NA | p701_02 == NA |p701_03 == NA | p701_04 == NA | p710_05 == NA ~ NA,
+                                     p701_01 == NA & p701_02 == NA & p701_03 == NA & p701_04 == NA & p710_05 == NA ~ NA,
                                      TRUE ~ 0), #Vaso de leche, comedor, qaliwarma, pension 65
          hogarProgSocial_joven = case_when(p710_07 == 1 | p710_08 == 1  |p710_09 == 1 | p710_10 == 1~ 1,
-                                           p710_07 == NA | p710_08 == NA  |p710_09 == NA | p710_10 == NA ~ NA,
-                                           TRUE ~ 0)) #JovProd TrabajaPeru ImpulsaPeru Beca18 
+                                           p710_07 == NA & p710_08 == NA  & p710_09 == NA & p710_10 == NA ~ NA,
+                                           TRUE ~ 0), #JovProd TrabajaPeru ImpulsaPeru Beca18 
+         internet= case_when(anio == 2023 & ( p114b1 ==1 | p114b2 ==1) ~ 1,
+                             internet == 1 & anio != 2023 ~ 1,
+                             internet == NA ~ NA,
+                             TRUE ~0))
 
-         #internet= case_when(anio == 2023 & p1144 == 1 & p1144b1 ==1 | p1144b2 ==1 ~ 1,
-                    #internet == NA ~ NA,
-                   # TRUE ~0))
+baseHogaresFiltrada <- baseHogaresFiltrada %>%
+  mutate(gashog2dPCap = gashog2d / mieperho,
+         gastoPCentil = xtile(gashog2dPCap, 100))
 
-# 2. Tabulaciones de pobreza por año
+# 3. Tabulaciones de pobreza por año -------------------------------------------
 tabla1 <- basePersonasFiltrada %>% 
   group_by(anio) %>%
   summarize(pobreza = weighted.mean(x = pobre, w = facpob07, na.rm = TRUE),
             pobrezaExtrema = weighted.mean(x = pobrezaExtrema, w = facpob07, na.rm = TRUE))
 
-# Características de la vivienda
-varViv <- c("vivBajaCalidad", "vivInvasion", "vivCedida",
-            "pisoTierra", "pisoCemento", "techoDebil",
-            "paredLadrillo", "combustibleCocina")
+# 4. Caracterización de población pobre y no pobre por año ---------------------
+
+## 4.1. A nivel de personas ----------------------------------------------------
 
 tablaPersonas <- function(variable) {
   basePersonasFiltrada %>%
@@ -103,10 +154,7 @@ tablaPersonas <- function(variable) {
     rename(anio = 1,
            nopobre = 2,
            pobre = 3)
-<<<<<<< Updated upstream
   }
-=======
-}
 
 varCatP <- c("abandono", "agua", "aguaPotable", "auto", "casado", "cocina_kerosene", 
              "combustibleCocina", "computadora", "confDivision", "confianzaMD", "confianzaMP", 
@@ -206,7 +254,6 @@ for(j in 1:length(varCatP)){
 
 
 ## 4.2. A nivel de hogar -------------------------------------------------------
->>>>>>> Stashed changes
 
 tablaHogares <- function(variable) {
   baseHogares %>%
@@ -218,9 +265,8 @@ tablaHogares <- function(variable) {
            pobre = 3)
 }
 
-<<<<<<< Updated upstream
 tablasViv <- lapply(varViv, tablaPersonas)
-=======
+
 varCat <- c("vivBajaCalidad", "vivInvasion", "vivCedida", "pisoTierra", "pisoCemento", "pisoTierraCemento", "techoDebil", "paredLadrillo",
             "combustibleCocina", "agua", "aguaPotable", "aguaSegura", "agua24Horas", "aguaCisterna", "desague", "electricidad", "tresServicios", "telCelu", "internet",
             "nbi1", "nbi2", "nbi3", "nbi4", "nbi5", "hogarVasoLeche", "hogarComedor", "hogarQaliWarma", "hogarCunaMas", "hogarJuntos", "hogarPension65", "hogarJovProd", "hogarTrabajaPeru", "hogarImpulsaPeru", "hogarBeca18",
@@ -229,7 +275,6 @@ varCat <- c("vivBajaCalidad", "vivInvasion", "vivCedida", "pisoTierra", "pisoCem
             "empInfJH", "sectorJHCom", "sectorJHRest", "sinContratoJH", "indepJH", "empPeqJH", "empMedJH", "empGrandeJH",
             "jh65mas", "jh25menos", "migranteJH", "migrante5aniosJH", "educSecJH", "educSupJH","nbis", 
             "hogar_Juntos", "hogarCunaMas_d",  "hogarCunaMas_a","hogarProgSocial","hogarProgSocial_joven")
->>>>>>> Stashed changes
 
 # Servicios básicos en la vivienda
 varServicios <- c("agua", "aguaPotable", "desague", 
@@ -291,47 +336,47 @@ varMigracion <- c("migrante", "migrante5anios")
 
 tablasMigracion <- lapply(varMigracion, tablaPersonas)
 
-setwd(dirOutput)
-write_xlsx(c(tablasViv,tablasServicios,tablasActivos,tablasNBI,tablasJH,tablasInd,tablasCuenta, tablasRI,tablasSegSocial,tablasProgSociales), path = "tabla1.xlsx")
-
-########
-setwd(dirOutput)
-archivo <- loadWorkbook("tabla1.xlsx")
-
-nombres_hojas <- names(archivo) #nombre hojas actuales
-print(nombres_hojas)
-
-#nombres hojas
-nuevos_nombres <- c("vivBajaCalidad", "vivInvasion", "vivCedida",
-                    "pisoTierra", "pisoCemento", "techoDebil",
-                    "paredLadrillo", "combustibleCocina","agua", 
-                    "aguaPotable", "desague", "electricidad", 
-                    "telCelu", "internet", "nActivos",
-                    "nActivosPrioritarios","nbis","mujerJH","jh65mas",
-                    "mujer", "empInf", "sinContrato", 
-                    "indep","CuentaNotiene","confFamiliares",
-                    "segEssalud", "segPriv", "segEps", "segFfaa", 
-                    "segSis", "segUniv", "segEsc", "segOtro", 
-                    "algunSeg", "difSegSis","programasSociales") 
-
-#guardar nombres en las hojas y exportar
-for(i in seq_along(nuevos_nombres)) {
-  names(archivo)[i] <- nuevos_nombres[i]
+# Gráficos 
+# Series anuales
+for(i in seq_along(tablas)){
+  graph <- tablas[[i]] %>% 
+    filter(pobre != 0 & nopobre !=0) %>% 
+    pivot_longer(cols = c(nopobre, pobre), names_to = "estado", values_to = "valor") %>% 
+    select(c(anio, estado, valor)) %>% 
+    ggplot() +
+    aes(x = anio, y = valor, color = estado) +
+    stat_summary(aes(y=valor), fun ="mean", geom="point") +
+    stat_summary(aes(y=valor), fun ="mean", geom="line") +
+    labs(x = "Año",
+         y = varCatP[i]) +
+    labs(title = paste("Pobreza urbana según",varCatP[i], ", 2007-2023"), 
+         color = "Condición de pobreza")
+  
+  setwd(dirOutput)
+  ggsave(paste("graficosUrb/Pob/fig_",varCatP[i],".png",sep = ""))
 }
-saveWorkbook(archivo, "tabla2.xlsx", overwrite = TRUE)
-#transferencias, en especies, servicios (cuna más - diurno de acompañamiento familiar)
 
-
-#graficos 
-graph1 <- tablasViv[4][[1]] %>% 
-  ggplot() +
-  aes(x = anio, y = pobre) +
-  stat_summary(aes(y=pobre), fun ="mean", geom="point") +
-  stat_summary(aes(y=nopobre), fun ="mean", geom="line") +
-  labs(x = "Año",
-       y = 'Pobreza urbana (%)') +
-  labs(title = "Pobreza urbana según estrato geográfico, 2007-2022", 
-       color = "Estrato")
-
-ggsave(filename = "graficos/g_Estrato.png")
-
+for(j in 1:length(varCatP)){
+  # Filter data for poor households and create a 'periodo' variable
+  filtered_data <-basePersonasFiltrada %>% 
+    mutate(periodo = case_when(anio >= 2021 ~ "Entre 2021 y 2023",
+                               anio < 2020 & anio >= 2017 ~ "Entre 2017 y 2019",
+                               TRUE ~ "OMITIR" ),
+           pobre = case_when(pobre == 1 ~ "Pobre",
+                             pobre != 1 ~ "No pobre")) %>% 
+    filter(periodo != "OMITIR") %>%
+    group_by(periodo, pobre) %>%
+    summarize(weighted_mean = weighted.mean(get(varCatP[j]), w = facpob07, na.rm = TRUE), .groups = 'drop') 
+  
+  # Create histogram with ggplot2
+  p <- filtered_data %>% 
+    ggplot() +
+    aes( y = weighted_mean, x = pobre, fill = pobre) +
+    geom_bar(stat = "identity", position = "dodge") +
+    facet_wrap(~ periodo) +
+    ggtitle(paste("Porcentaje de ", varCat[j], " según periodo y condición de pobreza - Urbano")) +
+    theme(legend.position = "none") 
+  
+  # Save the plot as a PNG file
+  ggsave(filename = paste0("graficosUrb/Pob/bar_", varCat[j], ".png"), plot = p)
+}

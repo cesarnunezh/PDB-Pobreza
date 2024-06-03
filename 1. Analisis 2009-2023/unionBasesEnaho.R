@@ -71,7 +71,7 @@ mod1 <- read_dta("modulo100.dta",col_select = c(anio, mes, conglome, vivienda, h
                                                 fecent, result, p101, p102, p103, p103a, p104, p104a, p105a, p110,
                                                 p110a, p110a1, p110g, p110c, p110c1, p110c2, p110c3, p111, p111a, 
                                                 p1121, p1122, p1123, p1124, p1126, p1125, p1127, p1138, p113a, p1142,
-                                                p1144, p1145, factor07, ticuest01, altitud, latitud, longitud, matches("^nbi")))
+                                                matches("^p114"), p1145, factor07, ticuest01, altitud, latitud, longitud, matches("^nbi")))
 baseHogares <- baseHogares %>% 
   left_join(mod1, by = c("anio", "mes", "conglome", "vivienda", "hogar", "ubigeo", "dominio", "estrato"))
 rm(mod1)
@@ -168,8 +168,10 @@ baseHogares <-  baseHogares %>%
 
 # Variables de acceso a TICs
 baseHogares <- baseHogares %>%
-  rename(telCelu = p1142, 
-         internet = p1144)
+  rename(telCelu = p1142) %>% 
+  mutate(internet = case_when(anio == 2023 ~ p114b1,
+                              anio != 2023 ~ p1144,
+                              TRUE ~ NA))
 
 #Variable de activos prioritarios
 baseHogares <- baseHogares %>%
