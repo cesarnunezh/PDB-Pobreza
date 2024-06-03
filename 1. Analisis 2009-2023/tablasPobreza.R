@@ -103,7 +103,110 @@ tablaPersonas <- function(variable) {
     rename(anio = 1,
            nopobre = 2,
            pobre = 3)
+<<<<<<< Updated upstream
   }
+=======
+}
+
+varCatP <- c("abandono", "agua", "aguaPotable", "auto", "casado", "cocina_kerosene", 
+             "combustibleCocina", "computadora", "confDivision", "confianzaMD", "confianzaMP", 
+             "confPension", "confTenencia", "confViolacion", "confViolencia", "confVisitas", 
+             "conviviente", "cuentaAhorro", "cuentaCorr", "cuentaNoTiene", "cuentaPlazoFijo", 
+             "desague", "desemp", "discapacidad", "discapEntender", "discapHabla", "discapMotora", 
+             "discapOir", "discapRelacion", "discapVista", "discrCostumbres", "discrDiscapacidad", 
+             "discrEdad", "discrEduc", "discriminacion", "discrIngresos", "discrLengua", 
+             "discrOrientacion", "discrOrigen", "discrRaza", "discrSexo", "discrVest", "educMadre", 
+             "educPadre", "educSec", "educSup", "electricidad", "empGrande", "empInf", "empMed", 
+             "estadoCivil", "estudiaMD", "grupoEdad", "hogarConHijo", 
+             "hogarJuntos", "hogarMonoParent", "hogarPension65", "hogarQaliWarma", "hogarUniFem", 
+             "hogarUniMayor", "hogarVasoLeche", "hombre", "inactivo", 
+             "indepAmb", "indCompVent", "indep", 
+             "indepDomCli", "indepNoReg", "indepOtros", "indepPerJur", "indepPerNat", "indepPuestoFijoCa", 
+             "indepPuestoImpCa", "indepPuestoImpMerc", "indepTaller", "indepVeh", "indepViv", "indepVivExc", 
+             "indigena", "indProd", "indepPuestoFijoMerc", "indServ", "internet", "lavadora", 
+             "leng", "licuadora", "mestizo", "migrante", "migrante5anios", "motIndep", "motIng", 
+             "motNecEcon", "motNoTrab", "motOtro", "motTradFam", "mujer", "nivEduc", "origen", "paredLadrillo", 
+             "pisoCemento", "pisoTierra", "pisoTierraCemento", "riesgoDesastre", 
+             "riesgoEmpleo", "riesgoEnfermedad", "riesgoQuiebra", "saludMD", "sector", "sectorCom", "sectorHog", 
+             "sectorRest", "segEps", "segEsc", "segEssalud", "segFfaa", "segOtro", "segPriv", "segSis", "segUniv", 
+             "sinContrato", "subempHrs", "subempIng", "tamaEmp", "techoDebil", "trabajaMD", 
+             "tresServicios", "usoColectivo", "usoCombi", "usoDiarioColectivo", "usoDiarioCombi",
+             "usoDiarioMototaxi", "usoDiarioMicrobus", "usoDiarioOmnibus", "usoDiarioTaxi", "usoMicrobus", 
+             "usoMototaxi", "usoOmnibus", "usoTaxi", "victimaDelito", "vivBajaCalidad", "vivCedida", "vivInvasion",
+             "equipo_sonido", "microondas", "plancha", "refrigerador", "telCelu", "tv_color",
+             "programasSociales", "primaria_c","secundaria_c", "superior_c",        
+             "castellano","lenguaNAt","subempleo", 
+             "educPadre_pri", "educMadre_pri", "educPadre_sec", "educMadre_sec", "educPadre_sup", "educMadre_sup")
+
+# Variables de hogar y vivienda
+tablas <- lapply(varCatP, tablaPersonas)
+
+setwd(dirOutput)
+write_xlsx(tablas, path = "tabla1.xlsx")
+
+setwd(dirOutput)
+archivo <- loadWorkbook("tabla1.xlsx")
+
+nombres_hojas <- names(archivo) #nombre hojas actuales
+print(nombres_hojas)
+
+#nombres hojas
+nuevos_nombres <- varCatP
+
+#guardar nombres en las hojas y exportar
+for(i in seq_along(nuevos_nombres)) {
+  names(archivo)[i] <- nuevos_nombres[i]
+}
+saveWorkbook(archivo, "tabla1.xlsx", overwrite = TRUE)
+
+# Gráficos 
+# Series anuales
+for(i in seq_along(tablas)){
+  graph <- tablas[[i]] %>% 
+    filter(pobre != 0 & nopobre !=0) %>% 
+    pivot_longer(cols = c(nopobre, pobre), names_to = "estado", values_to = "valor") %>% 
+    select(c(anio, estado, valor)) %>% 
+    ggplot() +
+    aes(x = anio, y = valor, color = estado) +
+    stat_summary(aes(y=valor), fun ="mean", geom="point") +
+    stat_summary(aes(y=valor), fun ="mean", geom="line") +
+    labs(x = "Año",
+         y = varCatP[i]) +
+    labs(title = paste("Pobreza urbana según",varCatP[i], ", 2007-2023"), 
+         color = "Condición de pobreza")
+  
+  setwd(dirOutput)
+  ggsave(paste("graficosUrb/Pob/fig_",varCatP[i],".png",sep = ""))
+}
+
+for(j in 1:length(varCatP)){
+  # Filter data for poor households and create a 'periodo' variable
+  filtered_data <-basePersonasFiltrada %>% 
+    mutate(periodo = case_when(anio >= 2021 ~ "Entre 2021 y 2023",
+                               anio < 2020 & anio >= 2017 ~ "Entre 2017 y 2019",
+                               TRUE ~ "OMITIR" ),
+           pobre = case_when(pobre == 1 ~ "Pobre",
+                             pobre != 1 ~ "No pobre")) %>% 
+    filter(periodo != "OMITIR") %>%
+    group_by(periodo, pobre) %>%
+    summarize(weighted_mean = weighted.mean(get(varCatP[j]), w = facpob07, na.rm = TRUE), .groups = 'drop') 
+  
+  # Create histogram with ggplot2
+  p <- filtered_data %>% 
+    ggplot() +
+    aes( y = weighted_mean, x = pobre, fill = pobre) +
+    geom_bar(stat = "identity", position = "dodge") +
+    facet_wrap(~ periodo) +
+    ggtitle(paste("Porcentaje de ", varCatP[j], " según periodo y condición de pobreza - Urbano")) +
+    theme(legend.position = "none") 
+  
+  # Save the plot as a PNG file
+  ggsave(filename = paste0("graficosUrb/Pob/bar_", varCatP[j], ".png"), plot = p)
+}
+
+
+## 4.2. A nivel de hogar -------------------------------------------------------
+>>>>>>> Stashed changes
 
 tablaHogares <- function(variable) {
   baseHogares %>%
@@ -115,7 +218,18 @@ tablaHogares <- function(variable) {
            pobre = 3)
 }
 
+<<<<<<< Updated upstream
 tablasViv <- lapply(varViv, tablaPersonas)
+=======
+varCat <- c("vivBajaCalidad", "vivInvasion", "vivCedida", "pisoTierra", "pisoCemento", "pisoTierraCemento", "techoDebil", "paredLadrillo",
+            "combustibleCocina", "agua", "aguaPotable", "aguaSegura", "agua24Horas", "aguaCisterna", "desague", "electricidad", "tresServicios", "telCelu", "internet",
+            "nbi1", "nbi2", "nbi3", "nbi4", "nbi5", "hogarVasoLeche", "hogarComedor", "hogarQaliWarma", "hogarCunaMas", "hogarJuntos", "hogarPension65", "hogarJovProd", "hogarTrabajaPeru", "hogarImpulsaPeru", "hogarBeca18",
+            "hogarConHijo", "hogarMonoParent", "hogarNuclear", "hogarExtendido", "hogarUniFem", "hogarUniMayor",
+            "mujerJH", "mestizoJH", "indigenaJH", "hombreJH", "jovenJH", "adultoJovJH", "adultoJH", "adultoMayorJH", "convivienteJH", "casadoJH",
+            "empInfJH", "sectorJHCom", "sectorJHRest", "sinContratoJH", "indepJH", "empPeqJH", "empMedJH", "empGrandeJH",
+            "jh65mas", "jh25menos", "migranteJH", "migrante5aniosJH", "educSecJH", "educSupJH","nbis", 
+            "hogar_Juntos", "hogarCunaMas_d",  "hogarCunaMas_a","hogarProgSocial","hogarProgSocial_joven")
+>>>>>>> Stashed changes
 
 # Servicios básicos en la vivienda
 varServicios <- c("agua", "aguaPotable", "desague", 
