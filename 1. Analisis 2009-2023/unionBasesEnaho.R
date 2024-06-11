@@ -175,7 +175,7 @@ baseHogares <- baseHogares %>%
 
 #Variable de activos prioritarios
 baseHogares <- baseHogares %>%
-  mutate(nActivosPrioritarios = rowSums(select(., computadora, equipo_sonido, lavadora, licuadora, microondas, plancha, refrigerador, tv_color)))
+  mutate(nActivosPrioritarios = rowSums(select(., cocina_gas,computadora, equipo_sonido, lavadora, licuadora, microondas, plancha, refrigerador, tv_color)))
 
 
 # variables de acceso a agua

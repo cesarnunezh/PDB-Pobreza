@@ -181,7 +181,9 @@ varCatP <- c("abandono", "agua", "aguaPotable", "auto", "casado", "cocina_kerose
              "tresServicios", "usoColectivo", "usoCombi", "usoDiarioColectivo", "usoDiarioCombi",
              "usoDiarioMototaxi", "usoDiarioMicrobus", "usoDiarioOmnibus", "usoDiarioTaxi", "usoMicrobus", 
              "usoMototaxi", "usoOmnibus", "usoTaxi", "victimaDelito", "vivBajaCalidad", "vivCedida", "vivInvasion",
-             "equipo_sonido", "microondas", "plancha", "refrigerador", "telCelu", "tv_color")
+             "equipo_sonido", "microondas", "plancha", "refrigerador", "telCelu", "tv_color",
+             "aguaHoras", "nActivos", "nActivosPrioritarios", "confFamiliares", "mieperho", "pctPerceptores", 
+             "ratioDependencia")
 
 # Variables de hogar y vivienda
 tablas <- lapply(varCatP, tablaPersonas)
@@ -242,11 +244,11 @@ for(j in 1:length(varCatP)){
     aes( y = weighted_mean, x = pobre, fill = pobre) +
     geom_bar(stat = "identity", position = "dodge") +
     facet_wrap(~ periodo) +
-    ggtitle(paste("Porcentaje de ", varCat[j], " según periodo y condición de pobreza - Urbano")) +
+    ggtitle(paste("Porcentaje de ", varCatP[j], " según periodo y condición de pobreza - Urbano")) +
     theme(legend.position = "none") 
   
   # Save the plot as a PNG file
-  ggsave(filename = paste0("graficosUrb/Pob/bar_", varCat[j], ".png"), plot = p)
+  ggsave(filename = paste0("graficosUrb/Pob/bar_", varCatP[j], ".png"), plot = p)
 }
 
 
