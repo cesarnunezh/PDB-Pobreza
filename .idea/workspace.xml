@@ -5,8 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="e93c4738-e6ee-4dd7-beec-7fdfb3e1118d" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/calculoIPM.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/calculoIPM.ipynb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/variablesEspaciales.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/variablesEspaciales.ipynb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/1. Analisis 2009-2023/tablasPobreza.R" beforeDir="false" afterPath="$PROJECT_DIR$/1. Analisis 2009-2023/tablasPobreza.R" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -16,9 +15,9 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
-  <component name="ProjectColorInfo"><![CDATA[{
-  "associatedIndex": 7
-}]]></component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 7
+}</component>
   <component name="ProjectId" id="2gWG8I1zT7AmI3vvsldd3rvjJSL" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
@@ -28,7 +27,7 @@
   "keyToString": {
     "RunOnceActivity.OpenProjectViewOnStart": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
-    "git-widget-placeholder": "main"
+    "git-widget-placeholder": "Merging main"
   }
 }]]></component>
   <component name="SharedIndexes">
