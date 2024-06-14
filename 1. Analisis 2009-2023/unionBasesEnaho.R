@@ -668,7 +668,7 @@ basePersonas <- basePersonas %>%
          numTrab = p512b,
          tamaEmp = case_when(p512b <= 10 ~ 1,
                                (p512a == 1 & p512b > 10) | p512a == 2 ~ 2,
-                               p512a == NA ~ NA, 
+                               is.na(p512a) ~ NA, 
                                TRUE ~ 3),
          empPeq = case_when(tamaEmp == 1 ~ 1,
                               tamaEmp == NA ~ NA,

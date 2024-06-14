@@ -58,6 +58,11 @@ setwd(dirEnaho)
 baseHogares <- read_dta("baseHogaresFinal.dta")
 basePersonas <- read_dta("basePersonasFinal.dta")
 
+basePersonas <- basePersonas %>% 
+  mutate(empInf2 = case_when(ocupinf == 1 ~ 1,
+                             is.na(ocupinf) ~ NA,
+                             TRUE ~ 0))
+
 basePersonasFiltrada <- basePersonas %>% 
   filter((p204==1 & p205==2) | (p204==2 & p206==1)) %>%
   filter(area == 1) %>% 
