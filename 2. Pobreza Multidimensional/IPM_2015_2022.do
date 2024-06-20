@@ -80,8 +80,8 @@ use "${temp}/enaho${ao}.dta", clear
 *-------------------------------------------------------------------------------
 
 *** Indicador 1: Atención médica
-gen     problema_salud = 1 if p4021 == 1 | p4022 == 1 | p4023 == 1 | p4024 == 1
-replace problema_salud = 0 if p4021 == 0 & p4022 == 0 & p4023 == 0 & p4024 == 0
+gen     problema_salud2 = 0 if p4021!=.
+replace problema_salud2 = 1 if p4021 == 1 | p4022 == 1 | p4023 == 1 | p4024 == 1 | p4026 == 1
 
 gen     razon_fuerza = 1 if p4091==1 | p4092==1 | p4093==1 | p4094==1 | p4096==1 | p4097==1 | p4098==1 | p4099==1 | p40910==1 | p40911==1
 replace razon_fuerza = 0 if p4091==0 & p4092==0 & p4093==0 & p4094==0 & p4096==0 & p4097==0 & p4098==0 & p4099==0 & p40910==0 & p40911==0
@@ -413,6 +413,8 @@ svy: mean pmon_pmul, over(`nivel')
 mat define mat3_`nivel'_${ao} = e(b)
 
 }
+
+svyset conglome [iw=facpob07], strata(estrato) || vivienda
 
 foreach nivel in nacional rural {
 	foreach var of varlist atencion_hog seguro_hog asistencia_hog logro_hog materiales hacinamiento agua saneamiento electricidad combustible empleo_hog pension_hog redes comunicacion {

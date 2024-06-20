@@ -58,84 +58,140 @@ setwd(dirEnaho)
 baseHogares <- read_dta("baseHogaresFinal.dta")
 basePersonas <- read_dta("basePersonasFinal.dta")
 
-basePersonas <- basePersonas %>% 
-  mutate(empInf2 = case_when(ocupinf == 1 ~ 1,
-                             is.na(ocupinf) ~ NA,
-                             TRUE ~ 0))
+basePersonas <- basePersonas %>% select(-desemp)
+basePersonas <- basePersonas %>% select(-indep)
 
+#AQUÍ SE VEN LAS VARIABLES DEL EMPLEO
 basePersonasFiltrada <- basePersonas %>% 
   filter((p204==1 & p205==2) | (p204==2 & p206==1)) %>%
   filter(area == 1) %>% 
+  mutate(desemp = case_when(ocu500 == 2 ~ 1,
+                            is.na(ocu500) ~ NA,
+                            TRUE ~ 0),
+         inactivo = case_when(ocu500 == 3 | ocu500 == 4 ~ 1,
+                              is.na(ocu500) ~ NA,
+                              TRUE ~ 0),
+         empInf = case_when(ocupinf == 1 ~ 1,
+                            is.na(ocupinf) ~ NA,
+                            TRUE ~ 0),
+         sinContrato = case_when(p511a == 7 ~ 1,
+                                 is.na(p511a) ~ NA,
+                                 TRUE ~ 0),
+         hrsTrb = p513a + p518,
+         sector = case_when(p506r4 < 1000 ~ 1,
+                            p506r4 > 1000 & p506r4 <= 4399 ~ 2,
+                            is.na(p506r4) ~ NA,
+                            TRUE ~ 3),
+         sectorCom = case_when(((p506r4 >= 4600 & p506r4 <= 4699) | (p506r4 >= 4500 & p506r4 <= 4599) | (p506r4 >= 4700 & p506r4 <= 4799)) ~ 1,
+                               TRUE ~ 0),
+         sectorRest = case_when(p506r4>=5500 & p506r4<=5699 ~ 1,
+                                TRUE ~ 0),
+         sectorHog = case_when(p506r4>=9700 & p506r4<=9799 ~ 1,
+                               TRUE ~ 0),
+         numTrab = p512b,
+         tamaEmp = case_when(p512b <= 10 ~ 1,
+                             (p512a == 1 & p512b > 10) | p512a == 2 ~ 2,
+                             is.na(p512a) ~ NA, 
+                             TRUE ~ 3),
+         empPeq = case_when(tamaEmp == 1 ~ 1,
+                            is.na(tamaEmp) ~ NA,
+                            TRUE ~ 0),
+         empMed = case_when(tamaEmp == 2 ~ 1,
+                            is.na(tamaEmp) ~ NA,
+                            TRUE ~ 0),
+         empGrande = case_when(tamaEmp == 3 ~ 1,
+                               is.na(tamaEmp) ~ NA,
+                               TRUE ~ 0),
+         d529t = case_when(d529t == 999999 ~ NA,
+                           TRUE ~ d529t),
+         d536 = case_when(d536 == 999999 ~ NA,
+                          TRUE ~ d536),
+         d540t = case_when(d540t == 999999 ~ NA,
+                           TRUE ~ d540t),
+         d543 = case_when(d543 == 999999 ~ NA,
+                          TRUE ~ d543),
+         d544t = case_when(d544t == 999999 ~ NA,
+                           TRUE ~ d544t),
+         ingLabPrin = case_when(ocu500 == 1 ~ (i524a1 + d529t + i530a + d536)/12,
+                                TRUE ~ NA),
+         ingLabSec = case_when(ocu500 == 1 ~ (i538a1 + d540t + i541a + d543)/12,
+                               TRUE ~ NA),
+         ingNoLab = d544t/12,
+         ingTot = sum(ingLabPrin, ingLabSec, ingNoLab, na.rm = TRUE),
+         subempleo = case_when(subempIng ==1 | subempHrs== 1 ~ 1,
+                               is.na(subempIng) ~ NA,
+                               TRUE ~ 0),
+         indep = case_when(p507 == 2 ~ 1,
+                           is.na(p507) ~ NA,
+                           TRUE ~ 0))
+
+basePersonasFiltrada <- basePersonasFiltrada %>% 
   mutate(pobrezaExtrema = case_when(pobreza == 1 ~ 1,
                                     TRUE ~ 0),
          primaria_c= case_when(p301a >= 4  ~ 1,
-                               p301a == NA ~ NA,
+                               is.na(p301a) ~ NA,
                                   TRUE ~ 0),
          secundaria_c = case_when(p301a >= 6 & p301a != 12 ~ 1,
-                                  p301a == NA ~ NA,
+                                  is.na(p301a) ~ NA,
                                   TRUE ~ 0),
          superior_c = case_when(p301a == 10 | p301a == 8 | p301a == 11 ~ 1,
-                                p301a == NA ~ NA,
+                                is.na(p301a) ~ NA,
                                 TRUE ~ 0),
          castellano = case_when(leng == 1 ~ 1,
-                                leng== NA ~ NA,
+                                is.na(leng) ~ NA,
                                 TRUE ~ 0),
          lenguaNAt = case_when(leng == 2 ~ 1,
-                               leng == NA ~ NA,
+                               is.na(leng) ~ NA,
                                TRUE ~ 0),
-         subempleo = case_when(subempIng ==1 | subempHrs== 1 ~ 1,
-                                subempIng == NA ~ NA,
-                                TRUE ~ 0),
          CuentaNotiene = case_when(p558e1_6 == 1 ~ 1,
-                                   p558e1_6 == NA ~ NA,
+                                   is.na(p558e1_6) ~ NA,
                                    TRUE ~ 0),
          educPadre_pri = case_when(p45_1 >= 3 ~ 1,
-                                   p45_1 == NA ~ NA,
+                                   is.na(p45_1) ~ NA,
                                    TRUE ~ 0),
          educMadre_pri = case_when(p45_2 >= 3 ~ 1,
-                                   p45_2 == NA ~ NA,
+                                   is.na(p45_2) ~ NA,
                                    TRUE ~ 0),
          educPadre_sec = case_when(p45_1 >= 5 ~ 1,
-                                   p45_1 == NA ~ NA,
+                                   is.na(p45_1) ~ NA,
                                    TRUE ~ 0),
          educMadre_sec = case_when(p45_2 >= 5 ~ 1,
-                                   p45_2 == NA ~ NA,
+                                   is.na(p45_2) ~ NA,
                                    TRUE ~ 0),
          educPadre_sup = case_when(p45_1 >= 9 | p45_1 == 7 ~ 1,
-                                   p45_1 == NA ~ NA,
+                                   is.na(p45_1) ~ NA,
                                    TRUE ~ 0),
          educMadre_sup = case_when(p45_2 >= 9 | p45_2 == 7 ~ 1,
-                                   p45_2 == NA ~ NA,
+                                   is.na(p45_2) ~ NA,
                                    TRUE ~ 0),
          algunSeg = case_when(rowSums(select(., starts_with("seg"))) > 0 ~ 1,
-                              TRUE ~ 0))
+                              TRUE ~ 0),
+         paqueteIntegrado = case_when(agua == 1 & desague == 1 & electricidad  == 1 & internet == 1 ~ 1,
+                                      is.na(agua) & is.na(desague) & is.na(electricidad) & is.na(internet) ~ NA,
+                                      TRUE ~ 0))
 
 baseHogaresFiltrada <- baseHogares %>%
   filter(area == 1) %>% 
   mutate(pobrezaExtrema = case_when(pobreza == 1 ~ 1,
                                     TRUE ~ 0),
          nbis = case_when(nbi1 == 1 | nbi2 == 1 | nbi3 == 1 | nbi4 ==1 | nbi5 ==1 ~ 1,
-                          nbi1 == NA & nbi2 == NA & nbi3 == NA & nbi4 ==NA & nbi5 ==NA ~ 1,
+                          is.na(nbi1) & is.na(nbi2) & is.na(nbi3) & is.na(nbi4) & is.na(nbi5) ~ 1,
                           TRUE ~ 0),
          hogar_Juntos = case_when(p710_04 == 1 ~ 1,
-                                  p710_04 == NA ~ NA,
+                                  is.na(p710_04) ~ NA,
                                   TRUE ~ 0),
          hogarCunaMas_d = case_when(p710_01 == 1 ~ 1,
-                                    p710_01 == NA ~ 1,
+                                    is.na(p710_01) ~ 1,
                                     TRUE ~ 0),
          hogarCunaMas_a = case_when(p710_02 == 1 ~ 1,
-                                    p710_02 == NA ~ NA,
+                                    is.na(p710_02) ~ NA,
                                     TRUE ~ 0), 
          hogarProgSocial = case_when(p701_01 == 1 | p701_02 == 1 |p701_03 == 1 | p701_04 == 1 | p710_05 == 1 ~ 1,
-                                     p701_01 == NA & p701_02 == NA & p701_03 == NA & p701_04 == NA & p710_05 == NA ~ NA,
+                                     is.na(p701_01) & is.na(p701_02) & is.na(p701_03) & is.na(p701_04) & is.na(p710_05) ~ NA,
                                      TRUE ~ 0), #Vaso de leche, comedor, qaliwarma, pension 65
          hogarProgSocial_joven = case_when(p710_07 == 1 | p710_08 == 1  |p710_09 == 1 | p710_10 == 1~ 1,
-                                           p710_07 == NA & p710_08 == NA  & p710_09 == NA & p710_10 == NA ~ NA,
-                                           TRUE ~ 0), #JovProd TrabajaPeru ImpulsaPeru Beca18 
-         internet= case_when(anio == 2023 & ( p114b1 ==1 | p114b2 ==1) ~ 1,
-                             internet == 1 & anio != 2023 ~ 1,
-                             internet == NA ~ NA,
-                             TRUE ~0))
+                                           is.na(p710_07) & is.na(p710_08)  & is.na(p710_09) & is.na(p710_10) ~ NA,
+                                           TRUE ~ 0)) #JovProd TrabajaPeru ImpulsaPeru Beca18
 
 baseHogaresFiltrada <- baseHogaresFiltrada %>%
   mutate(gashog2dPCap = gashog2d / mieperho,
@@ -150,16 +206,25 @@ tabla1 <- basePersonasFiltrada %>%
 # 4. Caracterización de población pobre y no pobre por año ---------------------
 
 ## 4.1. A nivel de personas ----------------------------------------------------
-
 tablaPersonas <- function(variable) {
+  
+  varEmp <- c("desemp", "inactivo", "empInf", "sinContrato", "sectorCom", "sectorRest", "empPeq", 
+              "empMed", "empGrande", "ingLabPrin", "ingTot", "subempleo", "indep")
+  # Usa un condicional para seleccionar el factor de expansión correcto
+  factor_expansion <- if (variable %in% varEmp) {
+    "fac500a"
+  } else {
+    "facpob07"
+  }
+  
   basePersonasFiltrada %>%
     group_by(anio, pobre) %>%
-    summarize_at(vars({{variable}}), ~ weighted.mean(., w = facpob07, na.rm = TRUE)) %>% 
+    summarize_at(vars({{variable}}), ~ weighted.mean(., w = get(factor_expansion), na.rm = TRUE)) %>% 
     pivot_wider(values_from = {{variable}}, names_from = pobre) %>% 
     rename(anio = 1,
            nopobre = 2,
            pobre = 3)
-  }
+}
 
 varCatP <- c("abandono", "agua", "aguaPotable", "auto", "casado", "cocina_kerosene", 
              "combustibleCocina", "computadora", "confDivision", "confianzaMD", "confianzaMP", 
@@ -169,7 +234,7 @@ varCatP <- c("abandono", "agua", "aguaPotable", "auto", "casado", "cocina_kerose
              "discapOir", "discapRelacion", "discapVista", "discrCostumbres", "discrDiscapacidad", 
              "discrEdad", "discrEduc", "discriminacion", "discrIngresos", "discrLengua", 
              "discrOrientacion", "discrOrigen", "discrRaza", "discrSexo", "discrVest", "educMadre", 
-             "educPadre", "educSec", "educSup", "electricidad", "empGrande", "empInf", "empMed", 
+             "educPadre", "educSec", "educSup", "electricidad", "empGrande", "empInf", "empPeq", "empMed", 
              "estadoCivil", "estudiaMD", "grupoEdad", "hogarConHijo", 
              "hogarJuntos", "hogarMonoParent", "hogarPension65", "hogarQaliWarma", "hogarUniFem", 
              "hogarUniMayor", "hogarVasoLeche", "hombre", "inactivo", 
@@ -190,7 +255,9 @@ varCatP <- c("abandono", "agua", "aguaPotable", "auto", "casado", "cocina_kerose
              "aguaHoras", "nActivos", "nActivosPrioritarios", "confFamiliares", "mieperho", "pctPerceptores", 
              "ratioDependencia", "programasSociales", "primaria_c","secundaria_c", "superior_c",        
              "castellano","lenguaNAt","subempleo", 
-             "educPadre_pri", "educMadre_pri", "educPadre_sec", "educMadre_sec", "educPadre_sup", "educMadre_sup")
+             "educPadre_pri", "educMadre_pri", "educPadre_sec", "educMadre_sec", "educPadre_sup", "educMadre_sup", "paqueteIntegrado")
+
+
 
 # Variables de hogar y vivienda
 tablas <- lapply(varCatP, tablaPersonas)

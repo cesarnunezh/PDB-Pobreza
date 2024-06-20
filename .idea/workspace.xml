@@ -5,7 +5,10 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="e93c4738-e6ee-4dd7-beec-7fdfb3e1118d" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/1. Analisis 2009-2023/calculoVariables.R" beforeDir="false" afterPath="$PROJECT_DIR$/1. Analisis 2009-2023/calculoVariables.R" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/1. Analisis 2009-2023/tablasPobreza.R" beforeDir="false" afterPath="$PROJECT_DIR$/1. Analisis 2009-2023/tablasPobreza.R" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/1. Analisis 2009-2023/unionBasesEnaho.R" beforeDir="false" afterPath="$PROJECT_DIR$/1. Analisis 2009-2023/unionBasesEnaho.R" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/2. Pobreza Multidimensional/IPM_2015_2022.do" beforeDir="false" afterPath="$PROJECT_DIR$/2. Pobreza Multidimensional/IPM_2015_2022.do" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -23,13 +26,13 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "RunOnceActivity.OpenProjectViewOnStart": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "git-widget-placeholder": "Merging main"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;Merging main&quot;
   }
-}]]></component>
+}</component>
   <component name="SharedIndexes">
     <attachedChunks>
       <set>

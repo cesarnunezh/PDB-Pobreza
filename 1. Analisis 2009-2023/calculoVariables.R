@@ -9,7 +9,7 @@
 ################################################################################
 
 # 0. Librerías y direcciones ----
-dirEnaho <- "C:/Users/User/OneDrive - MIGRACIÓN VIDENZA/1. Proyectos/1. Proyectos actuales/GiZ Pobreza Urbana/1. Productos/0. Insumos/1. Bases de datos/ENAHO"
+dirEnaho <- "C:/Users/User/OneDrive - MIGRACIÓN VIDENZA/1. Proyectos/1. Proyectos actuales/23. Artículos PDB/2. PDB - Pobreza Urbana/2. Data/1. Bases/2. ENAHO Anual"
 #dirEnaho <- "/etc/data/"
 library(tidyverse)
 library(haven)
@@ -18,11 +18,13 @@ library(mapsPERU)
 library(survey)
 library(sf)
 library(gganimate)
+library(writexl)
+library(openxlsx)
 
 # 1. Carga de bases de datos ----
 setwd(dirEnaho)
-baseHogares <- read_dta("base_trabajo/baseHogaresFinal.dta")
-basePersonas <- read_dta("base_trabajo/basePersonasFinal.dta")
+baseHogares <- read_dta("baseHogaresFinal.dta")
+basePersonas <- read_dta("basePersonasFinal.dta")
 
 # Generamos una base de datos filtrada a nivel de personas 
 basePersonasFilter <- basePersonas %>% 
@@ -108,9 +110,10 @@ basePersonasFilter <- basePersonas %>%
 
 df_list <- list()
 
-for (i in 2007:2022) {
+for (i in 2007:2023) {
   alternative <- basePersonasFilter %>%
-    filter(anio==i)
+    filter(anio==i) %>% 
+    filter(area == 1)
   
   # read the data into R using read.dta function
   assign(paste0("bP_", i), alternative)
@@ -127,7 +130,7 @@ for (i in 2007:2022) {
 
 rm(list = ls(pattern = "^bP"), basePersonasFilter)
 
-year_list <- as.list(2007:2022)
+year_list <- as.list(2007:2023)
 
 # 2. Estimaciones de variables ----
 ## 2.1. Pobreza urbana y vulnerabilidad por estrato y departamento ----
@@ -270,9 +273,14 @@ pobreza_ciudad <- lapply(df_list, function(df) {
 
 ### 2.1.1 Mapas ----
 map_peru <- map_REG |> #Cargamos la base de datos sobre los departamentos del Peru
-  rename(UBIGEO = COD_REGION ) #renombramos la variable del DF para el merge por UBIGEO
+  rename(UBIGEO = COD_REGION ) %>% #renombramos la variable del DF para el merge por UBIGEO 
+  mutate(dpto = case_when(UBIGEO == "159900" ~ 26,
+                          TRUE ~ as.integer(as.numeric(UBIGEO)/10000)))
 
-map_shiny <- merge(x = map_peru, y = data_pobreza, by = "UBIGEO", all.x = TRUE) 
+data_pobreza <- do.call(rbind, pobreza_dpto)
+rownames(data_pobreza) <- NULL
+
+map_shiny <- merge(x = map_peru, y = data_pobreza, by = "dpto", all.x = TRUE)
 
 map_pobreza_animado <- map_shiny  %>%  
   ggplot() +
@@ -283,7 +291,17 @@ map_pobreza_animado <- map_shiny  %>%
   labs(title = "Year: {floor(frame_time)}", fill = "Pobreza urbana (%)") +
   scale_fill_gradient(low = "lightblue", high = "darkblue")
 
-animate(map_pobreza_animado, nframes = 16, fps = 1, renderer = gifski_renderer())
+frames_dir <- "frames"
+dir.create(frames_dir, showWarnings = FALSE)
+
+# File renderer to save each frame as a PNG
+renderer <- file_renderer(dir = frames_dir, prefix = "frame")
+                          
+animate(map_pobreza_animado, nframes = 17, fps = 1, renderer = renderer)
+
+dirOutput <- "C:/Users/User/OneDrive - MIGRACIÓN VIDENZA/1. Proyectos/1. Proyectos actuales/23. Artículos PDB/2. PDB - Pobreza Urbana/2. Data/2. Output"
+setwd(dirOutput)
+write_xlsx(data_pobreza, path = "pobrezaUrbana.xlsx")
 
 map_vulnerabilidad_animado <- map_shiny  %>%  
   ggplot() +
