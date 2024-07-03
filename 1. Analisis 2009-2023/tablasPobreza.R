@@ -301,8 +301,8 @@ for(i in seq_along(tablas)){
 }
 
 for(j in 1:length(varCatP)){
-  # Filter data for poor households and create a 'periodo' variable
-  filtered_data <-basePersonasFiltrada %>% 
+  # Filtrar datos para hogares pobres y crear una variable 'periodo'
+  filtered_data <- basePersonasFiltrada %>% 
     mutate(periodo = case_when(anio >= 2021 ~ "Entre 2021 y 2023",
                                anio < 2020 & anio >= 2017 ~ "Entre 2017 y 2019",
                                TRUE ~ "OMITIR" ),
@@ -310,18 +310,30 @@ for(j in 1:length(varCatP)){
                              pobre != 1 ~ "No pobre")) %>% 
     filter(periodo != "OMITIR") %>%
     group_by(periodo, pobre) %>%
-    summarize(weighted_mean = weighted.mean(get(varCatP[j]), w = facpob07, na.rm = TRUE), .groups = 'drop') 
+    summarize(weighted_mean = weighted.mean(get(varCatP[j]), w = facpob07, na.rm = TRUE), 
+              se = sqrt(weighted.mean(get(varCatP[j]), w = facpob07, na.rm = TRUE) * 
+                          (1 - weighted.mean(get(varCatP[j]), w = facpob07, na.rm = TRUE)) / n()), 
+              .groups = 'drop') %>%
+    mutate(lower = weighted_mean - 1.96 * se, 
+           upper = weighted_mean + 1.96 * se)
   
-  # Create histogram with ggplot2
+  # Crear histograma con ggplot2
   p <- filtered_data %>% 
     ggplot() +
-    aes( y = weighted_mean, x = pobre, fill = pobre) +
+    aes(y = weighted_mean, x = pobre, fill = pobre) +
     geom_bar(stat = "identity", position = "dodge") +
+    geom_errorbar(aes(ymin = lower, ymax = upper), width = 0.2, position = position_dodge(0.9)) +
+    geom_text(aes(label = scales::percent(weighted_mean, accuracy = 0.1)), 
+              vjust = -0.5, size = 3) +
     facet_wrap(~ periodo) +
     ggtitle(paste("Porcentaje de ", varCatP[j], " según periodo y condición de pobreza - Urbano")) +
-    theme(legend.position = "none") 
+    theme(legend.position = "none",
+          axis.title.y = element_blank(),
+          axis.text.y = element_blank(),
+          axis.ticks.y = element_blank(),
+          panel.grid = element_blank()) 
   
-  # Save the plot as a PNG file
+  # Guardar el gráfico como archivo PNG
   ggsave(filename = paste0("graficosUrb/Pob/bar_", varCatP[j], ".png"), plot = p)
 }
 
