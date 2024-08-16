@@ -106,7 +106,7 @@ mod3 <- read_dta("modulo300.dta",
                                 p301b, p301c, p301a, p302, p308c1, p308c2, p310))
 mod4 <- read_dta("modulo400.dta", 
                  col_select = c(anio, mes, conglome, vivienda, hogar, ubigeo, dominio, estrato, codperso, matches("^p401"),
-                                p4191, p4192, p4193, p4194, p4195, p4196, p4197, p4198, p420a, p420b,matches("^p407g")))
+                                p4191, p4192, p4193, p4194, p4195, p4196, p4197, p4198, p420a, p420b,matches("^p407g"), matches("^p403")))
 mod5 <- read_dta("modulo500.dta", 
                  col_select = c(anio, mes, conglome, vivienda, hogar, ubigeo, dominio, estrato, codperso, fac500a, 
                                 p500n, p500i, p501, p502, p503, matches("^p504"), p506r4, p507, p511a, p512a, p512b, p519, p521, p521a, 
@@ -395,7 +395,18 @@ baseJefesHogar <- basePersonas %>%
                                 TRUE ~ 0),
          mestizoJH = case_when(p558c == 6 ~ 1,
                                is.na(p558c) ~ NA,
-                               TRUE ~ 0)) %>% 
+                               TRUE ~ 0),
+         segJH = case_when(p4191 == 1 ~ 1, #EsSalud
+                           p4192 == 1 ~ 2, #SegPriv
+                           p4193 == 1 ~ 3, #EPS
+                           p4194 == 1 ~ 4, #FFAA
+                           p4195 == 1 ~ 5, #SIS
+                           p4196 == 1 ~ 6, #Seg Unive
+                           p4197 == 1 ~ 7, #Seg Escolar
+                           p4198 == 1 ~ 8,
+                           is.na(p4191) ~ NA,
+                           TRUE ~ 0)
+           ) %>% 
   select(anio, mes, conglome, vivienda, hogar, ubigeo, dominio, estrato, 
          nivEducJH, lengJH, mujerJH, hombreJH, edadJH, grupoEdadJH, estadoCivilJH, casadoJH, convivienteJH, 
          empInfJH, sectorJH, sectorJHCom, sectorJHRest, sectorJHHog, sinContratoJH, indepJH, tamaEmpJH, numTrabJH, anioEducJH,  
